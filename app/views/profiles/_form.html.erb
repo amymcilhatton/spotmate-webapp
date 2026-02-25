@@ -1,0 +1,123 @@
+<%= form_with model: @profile, url: profile_path, method: :patch, multipart: true do |form| %>
+  <p class="muted">Only your name and age are visible by default. You control what else to share.</p>
+
+  <h2>Identity & basic info</h2>
+  <div>
+    <%= label_tag "profile[name]", "Name" %>
+    <%= text_field_tag "profile[name]", current_user.name, placeholder: "Your name" %>
+    <p class="muted">We show your first name on your profile.</p>
+  </div>
+  <div>
+    <%= form.label :avatar, "Profile photo" %>
+    <%= form.file_field :avatar %>
+    <% if current_user.avatar.attached? %>
+      <label>
+        <%= check_box_tag "profile[remove_avatar]", "1", false %>
+        Remove current photo
+      </label>
+    <% end %>
+    <p class="muted">PNG, JPG, or WebP. Max 2MB.</p>
+  </div>
+  <div>
+    <%= form.label :age %>
+    <%= form.number_field :age, min: 16, max: 100 %>
+  </div>
+
+  <div>
+    <%= form.label :gender %>
+    <%= form.select :gender,
+                    [["Female", "female"], ["Male", "male"], ["Non-binary", "non_binary"], ["Prefer not to say", "prefer_not_say"]],
+                    include_blank: true %>
+  </div>
+
+  <div>
+    <%= form.label :home_gym_name, "Gym name" %>
+    <%= form.text_field :home_gym_name %>
+  </div>
+
+  <div>
+    <%= form.label :home_city, "Gym location" %>
+    <%= form.text_field :home_city %>
+  </div>
+
+  <div class="card">
+    <p class="muted">Map coming soon. You'll be able to pin your gym location here.</p>
+  </div>
+
+  <div>
+    <%= form.label :travel_preference, "Willingness to travel" %>
+    <%= form.select :travel_preference,
+                    [["Same gym only", "same_gym_only"], ["Gyms within my city", "same_city"],
+                     ["I'm flexible / different gyms are fine", "flexible"]],
+                    include_blank: false %>
+  </div>
+
+  <div>
+    <%= form.label :experience_band, "Experience level" %>
+    <%= form.select :experience_band,
+                    [["Beginner (0–1 year lifting)", "beginner"],
+                     ["Intermediate (1–3 years)", "intermediate"],
+                     ["Experienced (3+ years)", "experienced"]],
+                    include_blank: true %>
+  </div>
+
+  <div>
+    <%= form.label :goals, "Goals / interests" %>
+    <div class="grid">
+      <% Profile::GOAL_OPTIONS.each do |goal| %>
+        <label>
+          <%= check_box_tag "profile[goals][]", goal, @profile.goals.include?(goal), id: "goal_#{goal}" %>
+          <%= goal.humanize %>
+        </label>
+      <% end %>
+    </div>
+  </div>
+
+  <h2>Who you'd like to match with</h2>
+  <div>
+    <%= form.label :preferred_partner_age_min, "Preferred buddy age range" %>
+    <div class="btn-row">
+      <%= form.number_field :preferred_partner_age_min, min: 16, max: 100, placeholder: "Min age" %>
+      <%= form.number_field :preferred_partner_age_max, min: 16, max: 100, placeholder: "Max age" %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :preferred_buddy_days, "Preferred training days" %>
+    <div class="grid">
+      <% Profile::BUDDY_DAY_OPTIONS.each do |day| %>
+        <label>
+          <%= check_box_tag "profile[preferred_buddy_days][]", day, @profile.preferred_buddy_days.include?(day),
+                            id: "buddy_day_#{day}" %>
+          <%= day.capitalize %>
+        </label>
+      <% end %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :preferred_buddy_times, "Preferred time of day" %>
+    <div class="grid">
+      <% Profile::TIME_OF_DAY_OPTIONS.each do |slot| %>
+        <label>
+          <%= check_box_tag "profile[preferred_buddy_times][]", slot,
+                            @profile.preferred_buddy_times.include?(slot),
+                            id: "buddy_time_#{slot}" %>
+          <%= slot.humanize %>
+        </label>
+      <% end %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :women_only, "Women-only matching" %>
+    <%= form.check_box :women_only, disabled: @profile.gender == "male" %>
+    <% if @profile.gender == "male" %>
+      <p class="muted">Women-only matching is available to users who don’t identify as men.</p>
+    <% end %>
+  </div>
+
+  <div>
+    <%= form.submit "Save profile", class: "btn" %>
+  </div>
+<% end %>

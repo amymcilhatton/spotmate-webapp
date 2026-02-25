@@ -1,0 +1,92 @@
+<h1>Your profile</h1>
+
+<div class="profile-actions">
+  <%= link_to "Edit profile", edit_profile_path, class: "btn" %>
+</div>
+
+<% if @profile.persisted? %>
+  <div class="card profile-header">
+    <div class="profile-identity">
+      <div class="avatar-lg">
+        <% if current_user.avatar.attached? %>
+          <%= image_tag url_for(current_user.avatar), alt: "Profile photo" %>
+        <% else %>
+          <span><%= (current_user.name.presence || current_user.email).to_s.first.upcase %></span>
+        <% end %>
+      </div>
+      <div>
+        <% display_name = current_user.name.to_s.split.first.presence || current_user.email %>
+        <h2><%= display_name %></h2>
+        <p class="muted">
+          <%= [@profile.age, @profile.gender&.humanize].compact.join(" · ") %>
+        </p>
+        <% if @profile.experience_band.present? %>
+          <span class="badge"><%= @profile.experience_band.humanize %></span>
+        <% end %>
+        <% if @profile.women_only %>
+          <span class="badge badge-muted">Women-only matches</span>
+        <% end %>
+        <div>
+          <%= link_to "Change photo", edit_profile_path, class: "btn btn-ghost btn-small" %>
+        </div>
+      </div>
+    </div>
+    <div class="profile-meta">
+      <p><strong><%= @profile.home_gym_name %></strong></p>
+      <p class="muted"><%= @profile.home_city %></p>
+      <p class="muted">
+        <%= case @profile.travel_preference
+            when "same_gym_only" then "Same gym only"
+            when "same_city" then "Gyms in my city"
+            else "Flexible for other gyms"
+            end %>
+      </p>
+    </div>
+  </div>
+
+  <div class="profile-grid">
+    <div class="card">
+      <h3>Goals & training style</h3>
+      <div class="chip-row">
+        <% @profile.goals.each do |goal| %>
+          <span class="chip"><%= goal.humanize %></span>
+        <% end %>
+      </div>
+      <% if @profile.preferred_buddy_times.any? %>
+        <p class="muted">Prefers to train: <%= @profile.preferred_buddy_times.map(&:humanize).join(", ") %></p>
+      <% end %>
+    </div>
+
+    <div class="card">
+      <h3>Matching preferences</h3>
+      <% if @profile.preferred_partner_age_min.present? && @profile.preferred_partner_age_max.present? %>
+        <p>Preferred buddy age: <%= @profile.preferred_partner_age_min %> – <%= @profile.preferred_partner_age_max %></p>
+      <% end %>
+      <div class="chip-row">
+        <% @profile.preferred_buddy_days.each do |day| %>
+          <span class="chip"><%= day.capitalize %></span>
+        <% end %>
+        <% @profile.preferred_buddy_times.each do |slot| %>
+          <span class="chip chip-muted"><%= slot.humanize %></span>
+        <% end %>
+      </div>
+      <div class="chip-row">
+        <span class="badge badge-muted">
+          <%= case @profile.travel_preference
+              when "same_gym_only" then "Same gym only"
+              when "same_city" then "Gyms in my city"
+              else "Flexible"
+              end %>
+        </span>
+        <% if @profile.women_only %>
+          <span class="badge badge-muted">Women-only</span>
+        <% end %>
+      </div>
+      <p class="muted">These preferences are used by SpotMate’s match calculator.</p>
+    </div>
+  </div>
+<% else %>
+  <div class="card">
+    <p class="muted">No profile yet.</p>
+  </div>
+<% end %>
