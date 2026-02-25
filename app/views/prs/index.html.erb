@@ -1,0 +1,181 @@
+<div class="sessions-header">
+  <div>
+    <h1>Personal Bests</h1>
+    <p class="muted">Your all-time strongest lifts and fastest runs.</p>
+  </div>
+  <%= link_to "Add PR", new_pr_path, class: "btn" %>
+</div>
+
+<% strength_keywords = %w[bench squat deadlift press overhead hip thrust pull-up] %>
+<% endurance_keywords = %w[run running row rowing bike cycle cycling swim 5k 10k mile km] %>
+
+<div class="pr-sections">
+  <div class="card pr-section">
+    <div class="section-header">
+      <h3 class="card-title">🏋️ Strength PRs</h3>
+      <%= link_to "Add PR", new_pr_path, class: "btn btn-ghost btn-small" %>
+    </div>
+    <% strength_prs = @prs.select { |pr| strength_keywords.any? { |k| pr.exercise.to_s.downcase.include?(k) } } %>
+    <% if strength_prs.any? %>
+      <div class="grid">
+        <% strength_prs.group_by { |pr| pr.exercise.to_s.downcase }.each do |exercise, prs| %>
+          <% ordered = prs.sort_by(&:date).reverse %>
+          <% current = ordered.first %>
+          <% previous = ordered.second %>
+          <% delta = previous.present? ? current.value.to_f - previous.value.to_f : nil %>
+          <div class="card pr-card">
+            <div class="pr-header">
+              <span class="pr-icon">🏋️</span>
+              <strong><%= current.exercise %></strong>
+            </div>
+            <div class="pr-value"><%= current.value %> <%= current.unit %></div>
+            <p class="muted">Achieved <%= current.date %></p>
+            <% if delta.present? %>
+              <span class="badge">+<%= delta.round(1) %> <%= current.unit %> since last PR</span>
+            <% else %>
+              <span class="badge badge-muted">First recorded PR</span>
+            <% end %>
+            <div class="pr-progress">
+              <div class="meter">
+                <div class="meter-fill" style="width: <%= delta.present? ? [delta.abs * 5, 100].min : 40 %>%"></div>
+              </div>
+            </div>
+            <div class="barbell-visual">
+              <span></span><span></span><span></span>
+            </div>
+            <button class="btn btn-ghost btn-small" data-history-open="history-<%= exercise.parameterize %>">
+              View history
+            </button>
+          </div>
+          <dialog id="history-<%= exercise.parameterize %>" class="modal modal-narrow">
+            <div class="card modal-card">
+              <div class="modal-titlebar">
+                <h3><%= current.exercise %> PR History</h3>
+              </div>
+              <table class="pr-history-table pr-history-table--styled">
+                <thead>
+                  <tr><th>Date</th><th>Value</th><th>Change</th></tr>
+                </thead>
+                <tbody>
+                  <% ordered.each_with_index do |entry, idx| %>
+                    <% previous_entry = ordered[idx + 1] %>
+                    <% change = previous_entry.present? ? entry.value.to_f - previous_entry.value.to_f : nil %>
+                    <tr>
+                      <td><%= entry.date %></td>
+                      <td><%= entry.value %> <%= entry.unit %></td>
+                      <td>
+                        <% if change.present? %>
+                          <span class="<%= change.positive? ? "pos" : "neg" %>">
+                            <%= change.positive? ? "+" : "-" %><%= change.abs.round(1) %>
+                          </span>
+                        <% else %>
+                          —
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+              <svg class="pr-line pr-line--bright" viewBox="0 0 100 40">
+                <% values = ordered.map { |e| e.value.to_f } %>
+                <% max = values.max || 1 %>
+                <% min = values.min || 0 %>
+                <% points = values.reverse.each_with_index.map do |val, idx|
+                     x = (idx.to_f / [values.size - 1, 1].max) * 100
+                     y = 35 - ((val - min) / [max - min, 1].max) * 30
+                     "#{x},#{y}"
+                   end.join(" ") %>
+                <polyline points="<%= points %>" fill="none" stroke="currentColor" stroke-width="2"></polyline>
+              </svg>
+              <div class="modal-notes">
+                <strong>Notes</strong>
+                <p class="muted">No notes recorded for this PR yet.</p>
+              </div>
+              <div class="modal-footer">
+                <button class="btn" data-dialog-close>Close</button>
+                <% if ordered.size > 1 %>
+                  <%= button_to "Delete PR", pr_path(current), method: :delete, class: "btn btn-ghost btn-small" %>
+                <% else %>
+                  <button class="btn btn-ghost btn-small" disabled>Delete PR</button>
+                <% end %>
+              </div>
+            </div>
+          </dialog>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="muted">No strength PRs yet.</p>
+    <% end %>
+  </div>
+
+  <div class="card pr-section">
+    <div class="section-header">
+      <h3 class="card-title">🏃 Endurance PRs</h3>
+      <%= link_to "Add PR", new_pr_path, class: "btn btn-ghost btn-small" %>
+    </div>
+    <% endurance_prs = @prs.select { |pr| endurance_keywords.any? { |k| pr.exercise.to_s.downcase.include?(k) } } %>
+    <% if endurance_prs.any? %>
+      <div class="grid">
+        <% endurance_prs.group_by { |pr| pr.exercise.to_s.downcase }.each do |exercise, prs| %>
+          <% ordered = prs.sort_by(&:date).reverse %>
+          <% current = ordered.first %>
+          <% previous = ordered.second %>
+          <% delta = previous.present? ? current.value.to_f - previous.value.to_f : nil %>
+          <div class="card pr-card">
+            <div class="pr-header">
+              <span class="pr-icon">⏱️</span>
+              <strong><%= current.exercise %></strong>
+            </div>
+            <div class="pr-value"><%= current.value %> <%= current.unit %></div>
+            <p class="muted">Achieved <%= current.date %></p>
+            <% if delta.present? %>
+              <span class="badge"><%= delta.negative? ? "-" : "+" %><%= delta.abs.round(1) %> <%= current.unit %> since last PR</span>
+            <% else %>
+              <span class="badge badge-muted">First recorded PR</span>
+            <% end %>
+            <div class="pr-progress">
+              <div class="meter">
+                <div class="meter-fill" style="width: <%= delta.present? ? [delta.abs * 5, 100].min : 40 %>%"></div>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-small" data-history-open="history-<%= exercise.parameterize %>">
+              View history
+            </button>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="muted">No endurance PRs yet.</p>
+    <% end %>
+  </div>
+</div>
+
+<div class="card">
+  <h3 class="card-title">🏅 Badges & achievements</h3>
+  <% pr_count = @prs.count %>
+  <% workout_count = current_user.workout_logs.count %>
+  <% total_kg = @prs.select { |pr| pr.unit.to_s.downcase == "kg" }.sum { |pr| pr.value.to_f } %>
+  <div class="chip-row">
+    <span class="chip badge-shiny <%= pr_count.positive? ? "" : "chip-locked" %>">First PR</span>
+    <span class="chip badge-shiny <%= workout_count >= 5 ? "" : "chip-locked" %>">5 workouts logged</span>
+    <span class="chip badge-shiny <%= total_kg >= 1000 ? "" : "chip-locked" %>">1000kg total volume</span>
+    <span class="chip badge-shiny chip-locked">Consistency champ</span>
+    <span class="chip badge-shiny chip-locked">Race day finisher</span>
+  </div>
+  <p class="muted">More achievements coming soon.</p>
+</div>
+
+<script>
+  document.querySelectorAll("[data-history-open]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const dialog = document.getElementById(button.dataset.historyOpen);
+      if (dialog) dialog.showModal();
+    });
+  });
+  document.querySelectorAll("[data-dialog-close]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const dialog = button.closest("dialog");
+      if (dialog) dialog.close();
+    });
+  });
+</script>

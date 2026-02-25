@@ -1,0 +1,59 @@
+<div class="sessions-header">
+  <div>
+    <h1>Activity</h1>
+    <p class="muted">Track your workouts, progress, and personal bests.</p>
+  </div>
+  <%= link_to "Log workout", new_workout_log_path, class: "btn" %>
+</div>
+
+<% if @workout_logs.any? %>
+  <% if @latest_prs.any? %>
+    <div class="card">
+      <h3 class="card-title">🏅 Personal bests</h3>
+      <ul class="slot-list">
+        <% @latest_prs.each do |pr| %>
+          <li class="slot-row">
+            <strong><%= pr.exercise %></strong>
+            · <%= pr.value %> <%= pr.unit %>
+            · <%= pr.date %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="sessions-grid">
+    <% @workout_logs.each do |log| %>
+      <% payload = log.payload_json.is_a?(Hash) ? log.payload_json : {} %>
+      <% exercises = Array(payload["exercises"] || payload["movements"] || payload["lifts"]) %>
+      <% top_exercises = exercises.first(3) %>
+      <% more_count = [exercises.size - top_exercises.size, 0].max %>
+      <div class="card">
+        <h3 class="card-title">📈 <%= log.date.strftime("%a %d %b") if log.date.present? %></h3>
+        <p class="muted"><%= log.kind&.humanize %> session</p>
+        <% if top_exercises.any? %>
+          <p>
+            <%= top_exercises.join(", ") %>
+            <% if more_count.positive? %>
+              + <%= more_count %> more
+            <% end %>
+          </p>
+        <% else %>
+          <p class="muted">No exercises listed.</p>
+        <% end %>
+        <% if log.date.present? && current_user.prs.where("date = ?", log.date).exists? %>
+          <span class="badge">PR</span>
+        <% end %>
+        <div class="btn-row">
+          <span class="muted">Editing coming soon</span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="card empty-state">
+    <p>You haven’t logged any workouts yet.</p>
+    <p class="muted">Tracking your sessions helps improve your matches and progress.</p>
+    <%= link_to "Log your first workout", new_workout_log_path, class: "btn" %>
+  </div>
+<% end %>

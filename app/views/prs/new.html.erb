@@ -1,0 +1,106 @@
+<h1>Add PR</h1>
+
+<div class="card">
+  <%= form_with model: @pr, data: { pr_form: true } do |form| %>
+    <div>
+      <%= label_tag :pr_type, "Type" %>
+      <%= select_tag :pr_type, options_for_select([["Strength", "strength"], ["Endurance", "endurance"]]),
+                     data: { pr_type: true } %>
+    </div>
+
+    <div data-strength-fields>
+      <%= form.label :exercise, "Exercise or event" %>
+      <%= form.text_field :exercise, list: "strength-exercise-list", required: true %>
+      <datalist id="strength-exercise-list">
+        <% @strength_suggestions.each do |name| %>
+          <option value="<%= name %>"></option>
+        <% end %>
+      </datalist>
+      <p class="muted">Start typing to search or add a custom exercise.</p>
+    </div>
+
+    <div data-endurance-fields style="display:none">
+      <%= label_tag :endurance_exercise, "Exercise or event" %>
+      <%= text_field_tag "pr[exercise]", @pr.exercise, list: "endurance-exercise-list", required: true %>
+      <datalist id="endurance-exercise-list">
+        <% @endurance_suggestions.each do |name| %>
+          <option value="<%= name %>"></option>
+        <% end %>
+      </datalist>
+      <p class="muted">Start typing to search or add a custom exercise.</p>
+    </div>
+
+    <div data-strength-fields>
+      <%= form.label :value, "Value" %>
+      <%= form.number_field :value, step: 0.1, data: { pr_value: true } %>
+    </div>
+
+    <div data-endurance-fields style="display:none">
+      <%= label_tag :time_input, "Time (mm:ss or hh:mm:ss)" %>
+      <%= text_field_tag :time_input, "", placeholder: "24:30", data: { pr_time: true } %>
+      <p class="muted">We’ll convert this to seconds for now.</p>
+    </div>
+
+    <div>
+      <%= form.label :unit %>
+      <%= form.select :unit, [["kg", "kg"], ["lb", "lb"], ["reps", "reps"], ["sec", "sec"]], data: { pr_unit: true } %>
+    </div>
+
+    <div>
+      <%= form.label :date %>
+      <%= form.date_field :date, value: Date.current %>
+    </div>
+
+    <div>
+      <%= label_tag :notes, "Notes (coming soon)" %>
+      <%= text_field_tag :notes, "", disabled: true %>
+    </div>
+
+    <div>
+      <%= form.submit "Save PR", class: "btn" %>
+    </div>
+  <% end %>
+</div>
+
+<script>
+  document.querySelectorAll("[data-pr-form]").forEach((form) => {
+    const typeSelect = form.querySelector("[data-pr-type]");
+    const strengthFields = form.querySelectorAll("[data-strength-fields]");
+    const enduranceFields = form.querySelectorAll("[data-endurance-fields]");
+    const timeInput = form.querySelector("[data-pr-time]");
+    const valueField = form.querySelector("[data-pr-value]");
+    const unitField = form.querySelector("[data-pr-unit]");
+
+    const toggle = () => {
+      const isEndurance = typeSelect.value === "endurance";
+      strengthFields.forEach((el) => (el.style.display = isEndurance ? "none" : "block"));
+      enduranceFields.forEach((el) => (el.style.display = isEndurance ? "block" : "none"));
+      if (isEndurance) {
+        unitField.value = "sec";
+      }
+    };
+
+    const parseTime = (value) => {
+      if (!value) return null;
+      const parts = value.split(":").map(Number);
+      if (parts.some(Number.isNaN)) return null;
+      if (parts.length === 2) {
+        return (parts[0] * 60) + parts[1];
+      }
+      if (parts.length === 3) {
+        return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+      }
+      return null;
+    };
+
+    if (timeInput) {
+      timeInput.addEventListener("input", () => {
+        const seconds = parseTime(timeInput.value);
+        if (seconds && valueField) valueField.value = seconds;
+      });
+    }
+
+    typeSelect.addEventListener("change", toggle);
+    toggle();
+  });
+</script>

@@ -1,0 +1,45 @@
+<h1>Log workout</h1>
+
+<div class="card">
+  <%= form_with model: @workout_log do |form| %>
+    <div>
+      <%= form.label :title, "Title (optional)" %>
+      <%= form.text_field :title %>
+    </div>
+
+    <div>
+      <%= form.label :date %>
+      <%= form.date_field :date %>
+    </div>
+
+    <div>
+      <%= form.label :kind %>
+      <%= form.select :kind, WorkoutLog.kinds.keys.map { |k| [k.humanize, k] },
+                      include_blank: true %>
+    </div>
+
+    <div>
+      <%= form.label :payload_json, "Details (JSON)" %>
+      <%= form.text_area :payload_json, rows: 6 %>
+    </div>
+
+    <div>
+      <%= form.label :exercises, "Exercises (comma separated)" %>
+      <%= form.text_field :exercises %>
+    </div>
+
+    <div>
+      <%= form.check_box :shared_with_buddies %>
+      <%= form.label :shared_with_buddies, "Share with buddies" %>
+    </div>
+
+    <div>
+      <%= form.check_box :contains_pr %>
+      <%= form.label :contains_pr, "Contains PR" %>
+    </div>
+
+    <div>
+      <%= form.submit "Save", class: "btn" %>
+    </div>
+  <% end %>
+</div>
