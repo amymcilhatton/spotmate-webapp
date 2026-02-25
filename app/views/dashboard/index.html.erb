@@ -1,0 +1,148 @@
+<h1>Dashboard</h1>
+
+<div class="dashboard-hero card">
+  <div class="profile-identity">
+    <div class="avatar-lg avatar-lg--hero">
+      <% if current_user.avatar.attached? %>
+        <%= image_tag url_for(current_user.avatar), alt: "Profile photo" %>
+      <% else %>
+        <span><%= (current_user.name.presence || current_user.email).to_s.first.upcase %></span>
+      <% end %>
+    </div>
+    <div>
+      <% display_name = current_user.name.to_s.split.first.presence || current_user.email %>
+      <h2>Welcome back, <%= display_name %> 👋</h2>
+      <p class="muted"><%= @hero_subtitle %></p>
+      <span class="badge badge-muted">Active this week</span>
+    </div>
+  </div>
+  <div class="btn-row">
+    <%= link_to "Find matches", matches_path, class: "btn" %>
+    <%= link_to "Add availability", availability_slots_path, class: "btn btn-ghost" %>
+    <%= link_to "Log a workout", workout_logs_path, class: "btn btn-ghost" %>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <div class="card">
+    <h3 class="card-title">🪜 Setup progress</h3>
+    <% steps_completed = [@profile_ready, @availability_ready, @matches_ready].count(true) %>
+    <p class="muted">Setup: <%= steps_completed %> / 3 steps complete</p>
+    <div class="meter">
+      <div class="meter-fill" style="width: <%= (steps_completed / 3.0 * 100).round %>%"></div>
+    </div>
+    <ul class="slot-list">
+      <li class="slot-row">
+        Profile <span class="muted"><%= @profile_ready ? "Ready" : "Needs setup" %></span>
+      </li>
+      <li class="slot-row">
+        Availability <span class="muted"><%= @availability_ready ? "Ready" : "Add slots" %></span>
+      </li>
+      <li class="slot-row">
+        Matches <span class="muted"><%= @matches_ready ? "Ready" : "Find matches" %></span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3 class="card-title">📊 This week</h3>
+    <ul class="slot-list">
+      <li class="slot-row">🗓️ Sessions booked <span class="badge"><%= @sessions_booked_count %></span></li>
+      <li class="slot-row">✅ Sessions completed <span class="badge badge-muted"><%= @sessions_completed_count %></span></li>
+      <li class="slot-row">🏅 PRs hit <span class="badge badge-muted"><%= @prs_this_week_count %></span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3 class="card-title">📅 Upcoming sessions</h3>
+    <% if @upcoming_bookings.any? %>
+      <ul class="slot-list">
+        <% @upcoming_bookings.each do |booking| %>
+          <% partner = booking.match.other_user(current_user) %>
+          <% partner_profile = partner.profile %>
+          <% label = if booking.start_at.to_date == Date.current
+                       "Today"
+                     elsif booking.start_at.to_date == Date.tomorrow
+                       "Tomorrow"
+                     else
+                       "This week"
+                     end %>
+          <li class="slot-row">
+            <div>
+              <strong><%= booking.start_at.strftime("%a %d %b") %></strong>
+              · <%= booking.start_at.strftime("%H:%M") %>–<%= booking.end_at.strftime("%H:%M") %>
+            </div>
+            <div class="muted">
+              <%= partner.name || partner.email %>
+              <% if partner_profile&.home_gym_name.present? %>
+                · <%= partner_profile.home_gym_name %>
+              <% end %>
+            </div>
+            <span class="badge badge-muted"><%= label %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="muted">No sessions booked yet.</p>
+      <%= link_to "Find a buddy", matches_path, class: "btn btn-ghost" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="dashboard-bottom">
+  <div class="card">
+    <h3 class="card-title">📈 Recent activity</h3>
+    <% if @recent_log.present? %>
+      <p class="muted"><%= @recent_log.date %> · <%= @recent_log.kind.humanize %> session</p>
+      <% if @recent_pr.present? %>
+        <span class="badge">New PR this week!</span>
+      <% end %>
+    <% else %>
+      <p class="muted">You haven’t logged a workout yet.</p>
+      <%= link_to "Start tracking your progress →", new_workout_log_path, class: "btn btn-ghost" %>
+    <% end %>
+  </div>
+
+  <div class="card">
+    <h3 class="card-title">🤝 Suggested buddy</h3>
+    <% if @suggested_buddy.present? %>
+      <% buddy = @suggested_buddy.user %>
+      <% buddy_profile = buddy.profile %>
+      <div class="match-header">
+        <div class="avatar"></div>
+        <div>
+          <p><strong><%= buddy.name || buddy.email %></strong> · <%= buddy_profile&.age %></p>
+          <p class="muted"><%= [buddy_profile&.home_gym_name, buddy_profile&.home_city].compact.join(" · ") %></p>
+        </div>
+        <span class="pill"><%= (@suggested_buddy.score * 100).round %>% match</span>
+      </div>
+      <% if buddy_profile&.experience_band.present? %>
+        <span class="badge"><%= buddy_profile.experience_band.humanize %></span>
+      <% end %>
+      <div class="chip-row">
+        <% Array(buddy_profile&.goals).first(2).each do |goal| %>
+          <span class="chip"><%= goal.humanize %></span>
+        <% end %>
+      </div>
+      <%= link_to "View all matches", matches_path, class: "btn btn-ghost" %>
+    <% else %>
+      <p class="muted">No suggestions yet. Add goals and availability to see potential buddies.</p>
+    <% end %>
+  </div>
+</div>
+
+<div class="card dashboard-today">
+  <h3 class="card-title">🟢 Today</h3>
+  <% if @today_booking.present? %>
+    <% partner = @today_booking.match.other_user(current_user) %>
+    <p>You’re training with <strong><%= partner.name || partner.email %></strong> at
+      <%= @today_booking.start_at.strftime("%H:%M") %>.</p>
+    <p class="muted">Don’t forget to hydrate!</p>
+  <% elsif @next_booking.present? %>
+    <p>You have no sessions today.</p>
+    <p class="muted">Your next session is <%= @next_booking.start_at.strftime("%a %d %b at %H:%M") %>.</p>
+  <% else %>
+    <p>You have no sessions today.</p>
+    <%= link_to "Find a buddy", matches_path, class: "btn btn-ghost" %>
+  <% end %>
+</div>
