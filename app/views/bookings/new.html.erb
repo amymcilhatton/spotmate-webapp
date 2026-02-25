@@ -1,0 +1,67 @@
+<h1>New session</h1>
+
+<div class="card">
+  <%= form_with model: @booking, data: { session_form: true } do |form| %>
+    <div>
+      <%= form.label :match_id, "Buddy" %>
+      <%= form.select :match_id,
+                      @matches.map { |m| [m.other_user(current_user).name || m.other_user(current_user).email, m.id] },
+                      include_blank: true,
+                      data: { match_select: true } %>
+    </div>
+
+    <div>
+      <label>Suggested time (overlap)</label>
+      <select data-suggestion-select>
+        <option value="">Choose a suggested time</option>
+        <% @matches.each do |match| %>
+          <% buddy = match.other_user(current_user) %>
+          <% Array(@suggestions_by_match[match.id]).each do |window| %>
+            <option value="<%= match.id %>|<%= window[:start_at] %>|<%= window[:end_at] %>">
+              <%= buddy.name || buddy.email %> · <%= window[:start_at].strftime("%a %d %b %H:%M") %>–
+              <%= window[:end_at].strftime("%H:%M") %>
+            </option>
+          <% end %>
+        <% end %>
+      </select>
+      <p class="muted">Pick an overlap to auto-fill the session time.</p>
+    </div>
+
+    <div>
+      <%= form.label :start_at %>
+      <%= form.datetime_local_field :start_at, data: { start_at: true } %>
+    </div>
+
+    <div>
+      <%= form.label :end_at %>
+      <%= form.datetime_local_field :end_at, data: { end_at: true } %>
+    </div>
+
+    <div>
+      <%= form.label :reminder_enabled, "Reminders" %>
+      <%= form.check_box :reminder_enabled %>
+      <%= form.select :reminder_minutes_before, [["15 min", 15], ["30 min", 30], ["60 min", 60], ["120 min", 120]] %>
+    </div>
+
+    <div>
+      <%= form.submit "Create session", class: "btn" %>
+    </div>
+  <% end %>
+</div>
+
+<script>
+  document.querySelectorAll("[data-session-form]").forEach((form) => {
+    const suggestionSelect = form.querySelector("[data-suggestion-select]");
+    const matchSelect = form.querySelector("[data-match-select]");
+    const startField = form.querySelector("[data-start-at]");
+    const endField = form.querySelector("[data-end-at]");
+
+    suggestionSelect.addEventListener("change", () => {
+      if (!suggestionSelect.value) return;
+      const [matchId, startAt, endAt] = suggestionSelect.value.split("|");
+      matchSelect.value = matchId;
+      startField.value = startAt.slice(0, 16);
+      endField.value = endAt.slice(0, 16);
+    });
+  });
+</script>

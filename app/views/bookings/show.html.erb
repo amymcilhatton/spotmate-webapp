@@ -1,0 +1,8 @@
+<h1>Booking</h1>
+
+<div class="card">
+  <p><strong>Starts:</strong> <%= @booking.start_at.strftime("%b %d %H:%M") %></p>
+  <p><strong>Ends:</strong> <%= @booking.end_at.strftime("%b %d %H:%M") %></p>
+
+  <%= link_to "Download calendar invite", booking_path(@booking, format: :ics), class: "btn" %>
+</div>

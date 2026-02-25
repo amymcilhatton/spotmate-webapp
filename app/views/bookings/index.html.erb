@@ -1,0 +1,122 @@
+<div class="sessions-header">
+  <div>
+    <h1>Your sessions</h1>
+    <p class="muted">Manage your training sessions with your gym buddies.</p>
+  </div>
+  <%= link_to "New session", new_booking_path, class: "btn" %>
+</div>
+
+<div class="card">
+  <% if @this_week_booking.present? %>
+    <% buddy = @this_week_booking.match.other_user(current_user) %>
+    <% buddy_profile = buddy.profile %>
+    <h3>Next session</h3>
+    <p>
+      Next session:
+      <strong><%= @this_week_booking.start_at.strftime("%a %d %b at %H:%M") %></strong>
+    </p>
+    <p class="muted">
+      <%= buddy.name || buddy.email %>
+      <% if buddy_profile&.home_gym_name.present? %>
+        · <%= buddy_profile.home_gym_name %>
+      <% end %>
+    </p>
+    <div class="btn-row">
+      <%= link_to "Add to calendar", booking_path(@this_week_booking, format: :ics), class: "btn btn-ghost" %>
+      <%= link_to "Message buddy", chat_match_path(@this_week_booking.match), class: "btn btn-ghost" %>
+      <%= button_to "Cancel session", booking_path(@this_week_booking), method: :delete, class: "btn btn-ghost" %>
+    </div>
+  <% else %>
+    <h3>No upcoming sessions</h3>
+    <p class="muted">No sessions booked this week.</p>
+    <%= link_to "Find a buddy", matches_path, class: "btn btn-ghost" %>
+  <% end %>
+</div>
+
+<div class="sessions-grid">
+  <div class="card">
+    <h3>Upcoming sessions</h3>
+    <% if @upcoming_bookings.any? %>
+      <ul class="slot-list">
+        <% @upcoming_bookings.each do |booking| %>
+          <% buddy = booking.match.other_user(current_user) %>
+          <% buddy_profile = buddy.profile %>
+          <% label = if booking.start_at.to_date == Date.current
+                       "Today"
+                     elsif booking.start_at.to_date == Date.tomorrow
+                       "Tomorrow"
+                     else
+                       "This week"
+                     end %>
+          <li class="slot-row">
+            <div>
+              <strong><%= booking.start_at.strftime("%a %d %b") %></strong>
+              · <%= booking.start_at.strftime("%H:%M") %>–<%= booking.end_at.strftime("%H:%M") %>
+            </div>
+            <div class="muted">
+              <%= buddy.name || buddy.email %>
+              <% if buddy_profile&.home_gym_name.present? %>
+                · <%= buddy_profile.home_gym_name %>
+              <% end %>
+            </div>
+            <span class="badge badge-muted"><%= label %></span>
+            <div class="btn-row">
+              <%= link_to "Add to calendar", booking_path(booking, format: :ics), class: "btn btn-ghost btn-small" %>
+              <%= link_to "Message", chat_match_path(booking.match), class: "btn btn-ghost btn-small" %>
+              <%= button_to "Cancel", booking_path(booking), method: :delete, class: "btn btn-ghost btn-small" %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="muted">No upcoming sessions yet.</p>
+    <% end %>
+  </div>
+
+  <div class="card">
+    <h3>Weekly calendar</h3>
+    <div class="calendar-grid">
+      <% @calendar_days.each do |day| %>
+        <div class="calendar-day">
+          <div class="calendar-day-header"><%= day.strftime("%a %d") %></div>
+          <% Array(@bookings_by_day[day]).each do |booking| %>
+            <% buddy = booking.match.other_user(current_user) %>
+            <div class="calendar-slot">
+              <strong><%= booking.start_at.strftime("%H:%M") %></strong>–<%= booking.end_at.strftime("%H:%M") %>
+              <div class="muted"><%= buddy.name || buddy.email %></div>
+            </div>
+          <% end %>
+          <% if Array(@bookings_by_day[day]).empty? %>
+            <div class="muted">—</div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<div class="sessions-grid">
+  <div class="card">
+    <h3>Past sessions</h3>
+    <% if @past_bookings.any? %>
+      <ul class="slot-list">
+        <% @past_bookings.first(3).each do |booking| %>
+          <% buddy = booking.match.other_user(current_user) %>
+          <li class="slot-row muted">
+            <%= booking.start_at.strftime("%a %d %b") %> · <%= booking.start_at.strftime("%H:%M") %>–<%= booking.end_at.strftime("%H:%M") %>
+            · <%= buddy.name || buddy.email %>
+            <%= link_to "Log workout", new_workout_log_path, class: "btn btn-ghost btn-small" %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="muted">No past sessions yet.</p>
+    <% end %>
+  </div>
+
+  <div class="card">
+    <h3>Training streak</h3>
+    <p class="muted">Current streak: <strong><%= @streak_count %> days</strong></p>
+    <p class="muted">Keep logging workouts to build your streak.</p>
+  </div>
+</div>
