@@ -1,0 +1,7 @@
+<h1>Add availability</h1>
+
+<div class="card">
+  <%= render "form", availability_slot: @availability_slot,
+                     form_url: availability_slots_path,
+                     form_method: :post %>
+</div>

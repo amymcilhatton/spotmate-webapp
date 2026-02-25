@@ -1,0 +1,43 @@
+<%= form_with model: availability_slot, url: form_url, method: form_method,
+              data: { slot_form: true, home_gym: @home_gym_name } do |form| %>
+  <div>
+    <%= form.label :dow, "Day of week" %>
+    <%= form.select :dow,
+                    AvailabilitySlotsHelper::DAY_ORDER.map { |label, value| [label, value] },
+                    include_blank: true %>
+  </div>
+
+  <div>
+    <%= form.label :start_time, "Start time" %>
+    <%= form.time_field :start_time, value: time_field_value(availability_slot.start_min),
+                        data: { slot_time: "start" } %>
+    <div class="muted" data-slot-bucket> </div>
+  </div>
+
+  <div>
+    <%= form.label :end_time, "End time" %>
+    <%= form.time_field :end_time, value: time_field_value(availability_slot.end_min),
+                        data: { slot_time: "end" } %>
+    <div class="muted" data-slot-duration> </div>
+  </div>
+
+  <div>
+    <%= label_tag :location_source, "Location" %>
+    <%= select_tag :location_source,
+                   options_for_select([["Home gym", "home"], ["Other", "other"]],
+                                      availability_slot.location_name.present? ? "other" : "home"),
+                   data: { location_toggle: "source" } %>
+  </div>
+
+  <div data-location-toggle="input" <%= "style=display:none" if availability_slot.location_name.blank? %>>
+    <%= form.label :location_name, "Location name" %>
+    <%= form.text_field :location_name, placeholder: "Gym name or location" %>
+  </div>
+
+  <div class="muted">Slots repeat weekly. You can still reschedule sessions on the Bookings page.</div>
+
+  <div class="btn-row">
+    <%= form.submit "Save", class: "btn" %>
+    <button type="button" class="btn btn-ghost" data-dialog-close>Cancel</button>
+  </div>
+<% end %>

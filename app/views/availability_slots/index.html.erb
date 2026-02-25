@@ -1,0 +1,151 @@
+<h1>Your availability</h1>
+<p class="muted">
+  Add your weekly training times. We use this to find gym buddies with overlapping schedules and to help book joint sessions.
+</p>
+
+<div class="availability-header">
+  <div class="availability-summary">
+    <p class="muted"><%= @summary_text %></p>
+  </div>
+  <div class="availability-actions">
+    <button class="btn" type="button" data-dialog-open="new-slot">Add slot</button>
+    <% if @availability_suggestions.any? %>
+      <div class="suggestion-pill">
+        <span class="suggestion-icon">💡</span>
+        <span>Suggestions: <%= @availability_suggestions.first %></span>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @availability_slots.any? %>
+  <div class="grid day-grid">
+    <% AvailabilitySlotsHelper::DAY_ORDER.each do |label, dow| %>
+      <div class="card day-card">
+        <h3><%= label %></h3>
+        <% slots = @slots_by_day[dow] || [] %>
+        <% if slots.any? %>
+          <ul class="slot-list">
+            <% slots.each do |slot| %>
+              <li class="slot-row">
+                <%= time_label(slot.start_min) %> – <%= time_label(slot.end_min) %>
+                · <%= duration_label(slot.start_min, slot.end_min) %>
+                · <%= (slot.location_name.presence || "Home gym").to_s.split.map(&:capitalize).join(" ") %>
+                <% if @overlapping_slot_ids.include?(slot.id) %>
+                  <div class="muted warning">Overlaps with another slot.</div>
+                <% end %>
+                <% Array(@partner_overlap_by_slot_id[slot.id]).each do |name| %>
+                  <span class="chip chip-muted">Matches <%= name %></span>
+                <% end %>
+                <div class="btn-row">
+                  <button class="btn btn-ghost btn-small" type="button"
+                          data-dialog-open="edit-slot-<%= slot.id %>">Edit</button>
+                  <%= button_to "Delete", availability_slot_path(slot), method: :delete,
+                                class: "btn btn-ghost btn-small" %>
+                </div>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="muted">No slots yet.</p>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="card empty-state">
+    <p>No availability slots yet. Add at least one regular training time so we can find gym buddies who overlap with you.</p>
+    <button class="btn" type="button" data-dialog-open="new-slot">Add your first slot</button>
+  </div>
+<% end %>
+
+<dialog id="new-slot" class="modal">
+  <div class="card">
+    <h3>Add slot</h3>
+    <%= render "form", availability_slot: @new_slot,
+                       form_url: availability_slots_path,
+                       form_method: :post %>
+  </div>
+</dialog>
+
+<% @availability_slots.each do |slot| %>
+  <dialog id="edit-slot-<%= slot.id %>" class="modal">
+    <div class="card">
+      <h3>Edit slot</h3>
+      <%= render "form", availability_slot: slot,
+                         form_url: availability_slot_path(slot),
+                         form_method: :patch %>
+    </div>
+  </dialog>
+<% end %>
+
+<script>
+  document.querySelectorAll("[data-dialog-open]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const dialog = document.getElementById(button.dataset.dialogOpen);
+      if (dialog) dialog.showModal();
+    });
+  });
+  document.querySelectorAll("[data-dialog-close]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const dialog = button.closest("dialog");
+      if (dialog) dialog.close();
+    });
+  });
+  document.querySelectorAll("[data-location-toggle='source']").forEach((select) => {
+    const wrapper = select.closest("form");
+    const inputWrapper = wrapper.querySelector("[data-location-toggle='input']");
+    const homeGym = wrapper.dataset.homeGym;
+    const update = () => {
+      if (select.value === "other") {
+        inputWrapper.style.display = "block";
+      } else {
+        inputWrapper.style.display = "none";
+        const input = inputWrapper.querySelector("input");
+        if (input && homeGym) input.value = homeGym;
+      }
+    };
+    select.addEventListener("change", update);
+    update();
+  });
+
+  document.querySelectorAll("[data-slot-form]").forEach((form) => {
+    const start = form.querySelector("[data-slot-time='start']");
+    const end = form.querySelector("[data-slot-time='end']");
+    const durationLabel = form.querySelector("[data-slot-duration]");
+    const bucketLabel = form.querySelector("[data-slot-bucket]");
+
+    const bucketFor = (minutes) => {
+      if (minutes >= 300 && minutes <= 599) return "Morning slot";
+      if (minutes >= 600 && minutes <= 839) return "Lunchtime slot";
+      if (minutes >= 840 && minutes <= 1019) return "Afternoon slot";
+      if (minutes >= 1020 && minutes <= 1259) return "Evening slot";
+      return "Late night slot";
+    };
+
+    const minutesFrom = (value) => {
+      if (!value) return null;
+      const [h, m] = value.split(":").map(Number);
+      return (h * 60) + m;
+    };
+
+    const update = () => {
+      const startMin = minutesFrom(start.value);
+      const endMin = minutesFrom(end.value);
+      if (startMin != null) {
+        bucketLabel.textContent = bucketFor(startMin);
+      }
+      if (startMin != null && endMin != null && endMin > startMin) {
+        const minutes = endMin - startMin;
+        const hours = minutes / 60;
+        durationLabel.textContent = `${hours % 1 === 0 ? hours.toFixed(0) : hours.toFixed(1)} hours total`;
+      } else {
+        durationLabel.textContent = "";
+      }
+    };
+
+    start.addEventListener("input", update);
+    end.addEventListener("input", update);
+    update();
+  });
+</script>

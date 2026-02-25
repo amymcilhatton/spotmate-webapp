@@ -1,0 +1,7 @@
+<h1>Edit availability</h1>
+
+<div class="card">
+  <%= render "form", availability_slot: @availability_slot,
+                     form_url: availability_slot_path(@availability_slot),
+                     form_method: :patch %>
+</div>
