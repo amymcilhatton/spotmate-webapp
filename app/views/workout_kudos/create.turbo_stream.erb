@@ -1,0 +1,2 @@
+<%= turbo_stream.replace "kudos-#{params[:workout_log_id]}", partial: "buddies/kudos",
+                          locals: { log: WorkoutLog.find(params[:workout_log_id]) } %>

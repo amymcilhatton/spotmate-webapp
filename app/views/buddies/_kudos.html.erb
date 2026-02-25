@@ -1,0 +1,11 @@
+<div class="kudos" id="kudos-<%= log.id %>">
+  <% kudoed = log.workout_kudos.exists?(giver: current_user) %>
+  <% count = log.workout_kudos.count %>
+  <% if kudoed %>
+    <%= button_to "🔥 #{count}", workout_log_workout_kudo_path(log, log.workout_kudos.find_by(giver: current_user)),
+                  method: :delete, class: "btn btn-ghost btn-small" %>
+  <% else %>
+    <%= button_to "Send kudos · 🔥 #{count}", workout_log_workout_kudos_path(log),
+                  method: :post, class: "btn btn-ghost btn-small" %>
+  <% end %>
+</div>

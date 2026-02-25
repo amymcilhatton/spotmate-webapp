@@ -1,0 +1,34 @@
+<div class="card buddy-log">
+  <div class="buddy-log-header">
+    <div>
+      <strong><%= log.date&.strftime("%a %d %b") %></strong>
+      <div class="muted"><%= log.title.presence || "Full body session" %></div>
+    </div>
+    <% if log.contains_pr? %>
+      <span class="pill">New PR</span>
+    <% end %>
+  </div>
+  <div class="chip-row">
+    <% Array(log.exercises).first(3).each do |exercise| %>
+      <span class="chip"><%= exercise %></span>
+    <% end %>
+    <span class="chip chip-muted">Shared with buddies</span>
+  </div>
+
+  <div class="buddy-actions">
+    <%= render "buddies/kudos", log: log %>
+  </div>
+
+  <div class="buddy-comments">
+    <div class="muted">Comments</div>
+    <div id="comments-<%= log.id %>">
+      <% log.workout_comments.order(created_at: :desc).limit(3).each do |comment| %>
+        <%= render "buddies/comment", comment: comment %>
+      <% end %>
+    </div>
+    <%= form_with url: workout_log_workout_comments_path(log), data: { turbo: true } do |form| %>
+      <%= form.text_field :body, placeholder: "Add a comment…" %>
+      <%= form.submit "Send", class: "btn btn-ghost btn-small" %>
+    <% end %>
+  </div>
+</div>

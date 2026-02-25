@@ -1,0 +1,69 @@
+<div class="sessions-header">
+  <div>
+    <h1>Your buddies</h1>
+    <p class="muted">See shared workouts, send kudos, and leave comments.</p>
+  </div>
+</div>
+
+<div class="buddy-layout">
+  <div class="card buddy-list">
+    <h3 class="card-title">Your buddies</h3>
+    <% if @buddies.any? %>
+      <ul class="slot-list">
+        <% @buddies.each do |buddy| %>
+          <% active = buddy.workout_logs.where(shared_with_buddies: true)
+                                       .where("date >= ?", 7.days.ago.to_date).exists? %>
+          <li class="slot-row <%= @buddy == buddy ? "buddy-active" : "" %>">
+            <div class="match-header">
+              <div class="avatar"></div>
+              <div>
+                <strong><%= buddy.name || buddy.email %></strong>
+                <div class="muted"><%= [buddy.profile&.home_gym_name, buddy.profile&.home_city].compact.join(" · ") %></div>
+              </div>
+            </div>
+            <% if active %>
+              <span class="badge badge-muted">Active this week</span>
+            <% end %>
+            <%= link_to "View", buddy_path(buddy), class: "btn btn-ghost btn-small" %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="muted">No buddies yet. Match with someone to start sharing workouts.</p>
+    <% end %>
+  </div>
+
+  <div class="card buddy-feed">
+    <% if @buddy.present? %>
+      <div class="match-header">
+        <div class="avatar"></div>
+        <div>
+          <h3>Buddy space with <%= @buddy.name || @buddy.email %></h3>
+          <div class="chip-row">
+            <% if @buddy.profile&.experience_band.present? %>
+              <span class="badge"><%= @buddy.profile.experience_band.humanize %></span>
+            <% end %>
+            <% Array(@buddy.profile&.goals).first(3).each do |goal| %>
+              <span class="chip"><%= goal.humanize %></span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <% if @logs.any? %>
+        <div class="buddy-log-list">
+          <% @logs.each do |log| %>
+            <%= render "buddies/log_card", log: log %>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="empty-state">
+          <p><%= @buddy.name || @buddy.email %> hasn’t shared any workouts yet.</p>
+          <p class="muted">Once they share logs with buddies, you’ll see them here.</p>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="muted">Select a buddy to view their shared workouts.</p>
+    <% end %>
+  </div>
+</div>

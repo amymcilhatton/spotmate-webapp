@@ -1,0 +1,1 @@
+<%= turbo_stream.append "comments-#{params[:workout_log_id]}", partial: "buddies/comment", locals: { comment: @comment } %>

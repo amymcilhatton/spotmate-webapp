@@ -1,0 +1,5 @@
+<div class="comment">
+  <strong><%= comment.author.name || comment.author.email %></strong>
+  <span class="muted"><%= time_ago_in_words(comment.created_at) %> ago</span>
+  <div><%= comment.body %></div>
+</div>
