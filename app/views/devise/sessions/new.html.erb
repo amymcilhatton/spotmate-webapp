@@ -1,0 +1,65 @@
+<div class="auth-page">
+  <div class="auth-wrap">
+    <section class="auth-hero">
+      <div class="brand">SpotMate</div>
+      <h1>Find your next gym buddy.</h1>
+      <p class="muted">
+        Match by schedule, goals and gym, then track your sessions and PRs together.
+      </p>
+      <div class="chip-row">
+        <span class="chip">Match by schedule &amp; goals</span>
+        <span class="chip">Train with people at your gym</span>
+        <span class="chip">See your progress &amp; PRs</span>
+      </div>
+    </section>
+
+    <section class="auth-card card">
+      <div class="auth-tabs">
+        <%= link_to "Log in", new_session_path(resource_name), class: "auth-tab active" %>
+        <%= link_to "Sign up", new_registration_path(resource_name), class: "auth-tab" %>
+      </div>
+
+      <% if alert.present? || notice.present? || resource.errors.any? %>
+        <div class="auth-alert">
+          <%= alert || notice %>
+          <% if resource.errors.any? %>
+            <ul>
+              <% resource.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+        <div>
+          <%= f.label :email %>
+          <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
+        </div>
+
+        <div>
+          <%= f.label :password %>
+          <%= f.password_field :password, autocomplete: "current-password" %>
+        </div>
+
+        <div>
+          <%= f.check_box :remember_me %>
+          <%= f.label :remember_me, "Remember me" %>
+        </div>
+
+        <div>
+          <%= f.submit "Log in", class: "btn" %>
+        </div>
+      <% end %>
+
+      <div class="auth-links">
+        <p class="muted">
+          Don’t have an account?
+          <%= link_to "Sign up", new_registration_path(resource_name) %>
+        </p>
+        <%= link_to "Forgot your password?", new_password_path(resource_name) %>
+      </div>
+    </section>
+  </div>
+</div>
