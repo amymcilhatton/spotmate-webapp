@@ -1,0 +1,105 @@
+<h1>Matches</h1>
+
+<h2>Your training partners</h2>
+<% if @accepted_matches.any? %>
+  <div class="grid">
+    <% @accepted_matches.each do |match| %>
+      <% partner = match.other_user(current_user) %>
+      <% partner_profile = partner.profile %>
+      <div class="card match-card">
+        <div class="match-header">
+          <div class="avatar"></div>
+          <div>
+            <h3><%= partner.name || partner.email %></h3>
+            <p class="muted">
+              <%= [partner_profile&.age, partner_profile&.gender&.humanize].compact.join(" · ") %>
+            </p>
+          </div>
+        </div>
+        <p class="muted"><%= [partner_profile&.home_gym_name, partner_profile&.home_city].compact.join(" · ") %></p>
+        <% if partner_profile&.experience_band.present? %>
+          <span class="badge"><%= partner_profile.experience_band.humanize %></span>
+        <% end %>
+        <div class="chip-row">
+          <% Array(partner_profile&.goals).first(2).each do |goal| %>
+            <span class="chip"><%= goal.humanize %></span>
+          <% end %>
+        </div>
+        <% upcoming = @upcoming_by_match[match.id] %>
+        <% if upcoming.present? %>
+          <span class="pill">Upcoming session · <%= upcoming.start_at.strftime("%b %d %H:%M") %></span>
+        <% else %>
+          <p class="muted">No upcoming sessions yet.</p>
+        <% end %>
+        <div class="btn-row">
+          <%= link_to "Message", buddy_path(match.other_user(current_user)), class: "btn btn-ghost" %>
+          <%= button_to "Unmatch", rematch_match_path(match), method: :post, class: "btn btn-ghost btn-small" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="card empty-state">
+    <p>You have no training partners yet.</p>
+  </div>
+<% end %>
+
+<h2>Match suggestions</h2>
+
+<% if @suggestions.any? %>
+  <div class="grid">
+    <% @suggestions.each do |suggestion| %>
+      <% profile = suggestion.user.profile %>
+      <div class="card match-card">
+        <div class="match-header">
+          <div class="avatar"></div>
+          <div>
+            <h3><%= suggestion.user.name || suggestion.user.email %></h3>
+            <p class="muted">
+              <%= [profile&.age, profile&.gender&.humanize].compact.join(" · ") %>
+            </p>
+            <p class="muted"><%= [profile&.home_gym_name, profile&.home_city].compact.join(" · ") %></p>
+          </div>
+        </div>
+        <% if profile&.experience_band.present? %>
+          <span class="badge"><%= profile.experience_band.humanize %></span>
+        <% end %>
+        <div class="chip-row">
+          <% Array(profile&.goals).first(3).each do |goal| %>
+            <span class="chip"><%= goal.humanize %></span>
+          <% end %>
+        </div>
+
+        <div class="score-meter radial">
+          <div class="radial-meter" style="--value: <%= (suggestion.score * 100).round %>;">
+            <div class="radial-value"><%= (suggestion.score * 100).round %>%</div>
+          </div>
+          <div class="score-value">match</div>
+        </div>
+
+        <div class="section">
+          <p class="muted">Why this match works</p>
+          <div class="chip-row">
+            <% Array(suggestion.reason_tags).each do |tag| %>
+              <span class="chip chip-muted"><%= tag %></span>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <%= button_to "Connect", matches_path(user_id: suggestion.user.id, score: suggestion.score),
+                        method: :post,
+                        class: "btn" %>
+          <%= button_to "Not now", skip_matches_path(user_id: suggestion.user.id),
+                        method: :post,
+                        class: "btn btn-ghost" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="card empty-state">
+    <p>No match suggestions yet. Add goals, availability, or preferred days/times to improve your results.</p>
+    <%= link_to "Update profile", edit_profile_path, class: "btn" %>
+  </div>
+<% end %>
