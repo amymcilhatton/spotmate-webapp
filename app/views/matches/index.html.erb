@@ -17,6 +17,10 @@
           </div>
         </div>
         <p class="muted"><%= [partner_profile&.home_gym_name, partner_profile&.home_city].compact.join(" · ") %></p>
+        <% distance = @profile&.distance_to(partner_profile) %>
+        <% if distance %>
+          <p class="text-sm text-slate-400"><%= human_distance(distance) %></p>
+        <% end %>
         <% if partner_profile&.experience_band.present? %>
           <span class="badge"><%= partner_profile.experience_band.humanize %></span>
         <% end %>
@@ -44,6 +48,81 @@
   </div>
 <% end %>
 
+<h2>Requests for you</h2>
+<% if @incoming_requests.any? %>
+  <div class="grid">
+    <% @incoming_requests.each do |match| %>
+      <% partner = match.other_user(current_user) %>
+      <% profile = partner.profile %>
+      <div class="card match-card">
+        <div class="match-header">
+          <div class="avatar"></div>
+          <div>
+            <h3><%= partner.name || partner.email %></h3>
+            <p class="muted">
+              <%= [profile&.age, profile&.gender&.humanize].compact.join(" · ") %>
+            </p>
+            <p class="muted"><%= [profile&.home_gym_name, profile&.home_city].compact.join(" · ") %></p>
+            <% distance = @profile&.distance_to(profile) %>
+            <% if distance %>
+              <p class="text-sm text-slate-400"><%= human_distance(distance) %></p>
+            <% end %>
+          </div>
+        </div>
+        <% if profile&.experience_band.present? %>
+          <span class="badge"><%= profile.experience_band.humanize %></span>
+        <% end %>
+        <div class="chip-row">
+          <% Array(profile&.goals).first(3).each do |goal| %>
+            <span class="chip"><%= goal.humanize %></span>
+          <% end %>
+        </div>
+        <% if match.score.present? %>
+          <div class="score-meter radial">
+            <div class="radial-meter" style="--value: <%= (match.score * 100).round %>;">
+              <div class="radial-value"><%= (match.score * 100).round %>%</div>
+            </div>
+            <div class="score-value">match</div>
+          </div>
+        <% end %>
+        <div class="btn-row">
+          <%= button_to "Accept", accept_match_path(match), method: :post, class: "btn" %>
+          <%= button_to "Decline", decline_match_path(match), method: :post, class: "btn btn-ghost" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="card empty-state">
+    <p>No incoming requests right now.</p>
+  </div>
+<% end %>
+
+<h2>Requests you've sent</h2>
+<% if @outgoing_requests.any? %>
+  <div class="grid">
+    <% @outgoing_requests.each do |match| %>
+      <% partner = match.other_user(current_user) %>
+      <div class="card match-card">
+        <div class="match-header">
+          <div class="avatar"></div>
+          <div>
+            <h3><%= partner.name || partner.email %></h3>
+            <p class="muted">Request pending</p>
+          </div>
+        </div>
+        <div class="btn-row">
+          <%= button_to "Cancel request", cancel_match_path(match), method: :post, class: "btn btn-ghost" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="card empty-state">
+    <p>You have no outgoing requests.</p>
+  </div>
+<% end %>
+
 <h2>Match suggestions</h2>
 
 <% if @suggestions.any? %>
@@ -59,6 +138,10 @@
               <%= [profile&.age, profile&.gender&.humanize].compact.join(" · ") %>
             </p>
             <p class="muted"><%= [profile&.home_gym_name, profile&.home_city].compact.join(" · ") %></p>
+            <% distance = @profile&.distance_to(profile) %>
+            <% if distance %>
+              <p class="text-sm text-slate-400"><%= human_distance(distance) %></p>
+            <% end %>
           </div>
         </div>
         <% if profile&.experience_band.present? %>
@@ -90,7 +173,7 @@
           <%= button_to "Connect", matches_path(user_id: suggestion.user.id, score: suggestion.score),
                         method: :post,
                         class: "btn" %>
-          <%= button_to "Not now", skip_matches_path(user_id: suggestion.user.id),
+          <%= button_to "Skip", skip_matches_path(user_id: suggestion.user.id),
                         method: :post,
                         class: "btn btn-ghost" %>
         </div>

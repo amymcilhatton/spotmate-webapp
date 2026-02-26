@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_23_151030) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_26_123000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -128,6 +128,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_23_151030) do
     t.integer "preferred_partner_age_max"
     t.string "preferred_buddy_days", default: [], null: false, array: true
     t.string "preferred_buddy_times", default: [], null: false, array: true
+    t.string "gym_postcode"
+    t.decimal "gym_latitude", precision: 10, scale: 6
+    t.decimal "gym_longitude", precision: 10, scale: 6
+    t.integer "match_radius_miles", default: 50, null: false
     t.index ["user_id"], name: "index_profiles_on_user_id"
   end
 
@@ -188,6 +192,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_23_151030) do
     t.jsonb "exercises", default: [], null: false
     t.boolean "shared_with_buddies", default: false, null: false
     t.boolean "contains_pr", default: false, null: false
+    t.text "notes"
     t.index ["user_id"], name: "index_workout_logs_on_user_id"
   end
 

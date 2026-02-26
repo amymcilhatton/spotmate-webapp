@@ -1,4 +1,4 @@
-<%= form_with model: @profile, url: profile_path, method: :patch, multipart: true do |form| %>
+<%= form_with model: @profile, url: profile_path, method: :patch, multipart: true do |f| %>
   <p class="muted">Only your name and age are visible by default. You control what else to share.</p>
 
   <h2>Identity & basic info</h2>
@@ -8,8 +8,8 @@
     <p class="muted">We show your first name on your profile.</p>
   </div>
   <div>
-    <%= form.label :avatar, "Profile photo" %>
-    <%= form.file_field :avatar %>
+    <%= f.label :avatar, "Profile photo" %>
+    <%= f.file_field :avatar %>
     <% if current_user.avatar.attached? %>
       <label>
         <%= check_box_tag "profile[remove_avatar]", "1", false %>
@@ -19,42 +19,50 @@
     <p class="muted">PNG, JPG, or WebP. Max 2MB.</p>
   </div>
   <div>
-    <%= form.label :age %>
-    <%= form.number_field :age, min: 16, max: 100 %>
+    <%= f.label :age %>
+    <%= f.number_field :age, min: 16, max: 100 %>
   </div>
 
   <div>
-    <%= form.label :gender %>
-    <%= form.select :gender,
+    <%= f.label :gender %>
+    <%= f.select :gender,
                     [["Female", "female"], ["Male", "male"], ["Non-binary", "non_binary"], ["Prefer not to say", "prefer_not_say"]],
                     include_blank: true %>
   </div>
 
   <div>
-    <%= form.label :home_gym_name, "Gym name" %>
-    <%= form.text_field :home_gym_name %>
+    <%= f.label :home_gym_name, "Gym name" %>
+    <%= f.text_field :home_gym_name %>
   </div>
 
   <div>
-    <%= form.label :home_city, "Gym location" %>
-    <%= form.text_field :home_city %>
+    <%= f.label :home_city, "Gym location" %>
+    <%= f.text_field :home_city %>
   </div>
 
-  <div class="card">
-    <p class="muted">Map coming soon. You'll be able to pin your gym location here.</p>
+  <div data-controller="gym-map">
+    <%= f.label :gym_postcode, "Gym postcode" %>
+    <div class="btn-row" style="margin-top: 0;">
+      <%= f.text_field :gym_postcode, data: { "gym-map-target": "postcode" } %>
+      <button type="button" class="btn btn-ghost" data-action="click->gym-map#searchPostcode">Find on map</button>
+    </div>
+    <div data-gym-map-target="map" style="height: 300px; border-radius: 12px; overflow: hidden; margin-top: 8px;">
+      <%= f.hidden_field :gym_latitude, data: { "gym-map-target": "lat" } %>
+      <%= f.hidden_field :gym_longitude, data: { "gym-map-target": "lng" } %>
+    </div>
   </div>
 
   <div>
-    <%= form.label :travel_preference, "Willingness to travel" %>
-    <%= form.select :travel_preference,
+    <%= f.label :travel_preference, "Willingness to travel" %>
+    <%= f.select :travel_preference,
                     [["Same gym only", "same_gym_only"], ["Gyms within my city", "same_city"],
                      ["I'm flexible / different gyms are fine", "flexible"]],
                     include_blank: false %>
   </div>
 
   <div>
-    <%= form.label :experience_band, "Experience level" %>
-    <%= form.select :experience_band,
+    <%= f.label :experience_band, "Experience level" %>
+    <%= f.select :experience_band,
                     [["Beginner (0–1 year lifting)", "beginner"],
                      ["Intermediate (1–3 years)", "intermediate"],
                      ["Experienced (3+ years)", "experienced"]],
@@ -62,7 +70,7 @@
   </div>
 
   <div>
-    <%= form.label :goals, "Goals / interests" %>
+    <%= f.label :goals, "Goals / interests" %>
     <div class="grid">
       <% Profile::GOAL_OPTIONS.each do |goal| %>
         <label>
@@ -75,15 +83,23 @@
 
   <h2>Who you'd like to match with</h2>
   <div>
-    <%= form.label :preferred_partner_age_min, "Preferred buddy age range" %>
+    <%= f.label :match_radius_miles, "Match distance" %>
+    <div class="btn-row" style="align-items: center; margin-top: 0;">
+      <%= f.range_field :match_radius_miles, in: 0..100, step: 5, id: "match_radius_slider" %>
+      <span id="match_radius_value" class="muted"><%= f.object.match_radius_miles %> miles</span>
+    </div>
+    <p class="muted">We’ll prioritise matches whose gyms are within this distance of yours.</p>
+  </div>
+  <div>
+    <%= f.label :preferred_partner_age_min, "Preferred buddy age range" %>
     <div class="btn-row">
-      <%= form.number_field :preferred_partner_age_min, min: 16, max: 100, placeholder: "Min age" %>
-      <%= form.number_field :preferred_partner_age_max, min: 16, max: 100, placeholder: "Max age" %>
+      <%= f.number_field :preferred_partner_age_min, min: 16, max: 100, placeholder: "Min age" %>
+      <%= f.number_field :preferred_partner_age_max, min: 16, max: 100, placeholder: "Max age" %>
     </div>
   </div>
 
   <div>
-    <%= form.label :preferred_buddy_days, "Preferred training days" %>
+    <%= f.label :preferred_buddy_days, "Preferred training days" %>
     <div class="grid">
       <% Profile::BUDDY_DAY_OPTIONS.each do |day| %>
         <label>
@@ -96,7 +112,7 @@
   </div>
 
   <div>
-    <%= form.label :preferred_buddy_times, "Preferred time of day" %>
+    <%= f.label :preferred_buddy_times, "Preferred time of day" %>
     <div class="grid">
       <% Profile::TIME_OF_DAY_OPTIONS.each do |slot| %>
         <label>
@@ -110,14 +126,27 @@
   </div>
 
   <div>
-    <%= form.label :women_only, "Women-only matching" %>
-    <%= form.check_box :women_only, disabled: @profile.gender == "male" %>
+    <%= f.label :women_only, "Women-only matching" %>
+    <%= f.check_box :women_only, disabled: @profile.gender == "male" %>
     <% if @profile.gender == "male" %>
       <p class="muted">Women-only matching is available to users who don’t identify as men.</p>
     <% end %>
   </div>
 
   <div>
-    <%= form.submit "Save profile", class: "btn" %>
+    <%= f.submit "Save profile", class: "btn" %>
   </div>
 <% end %>
+
+<script>
+  document.addEventListener("turbo:load", () => {
+    const slider = document.getElementById("match_radius_slider");
+    const valueLabel = document.getElementById("match_radius_value");
+    if (!slider || !valueLabel) return;
+    const updateLabel = () => {
+      valueLabel.textContent = `${slider.value} miles`;
+    };
+    slider.oninput = updateLabel;
+    updateLabel();
+  });
+</script>

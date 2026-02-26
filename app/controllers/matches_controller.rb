@@ -1,30 +1,46 @@
 class MatchesController < ApplicationController
   def index
+    @profile = current_user.profile
     @matches = current_user.matches.includes(:user_a, :user_b, :match_decisions)
     matched_user_ids = @matches.flat_map { |match| [match.user_a_id, match.user_b_id] }.uniq
     @accepted_matches = @matches.select(&:status_accepted?)
+    pending_matches = @matches.select(&:status_pending?)
+    @incoming_requests = pending_matches.select { |match| incoming_request_for?(match) }
+    @outgoing_requests = pending_matches.select { |match| outgoing_request_for?(match) }
     @upcoming_by_match = upcoming_bookings_for(@accepted_matches)
     skipped_user_ids = Array(session[:skipped_user_ids])
 
+    candidates = User.where.not(id: matched_user_ids + skipped_user_ids + [current_user.id])
+                     .includes(:profile, :availability_slots)
+
+    radius = @profile&.match_radius_miles || 50
+    if @profile&.gym_latitude.present? && @profile&.gym_longitude.present?
+      candidates = candidates.select do |user|
+        distance = @profile.distance_to(user.profile)
+        distance && distance <= radius
+      end
+    end
+
     @suggestions = Matching::MatchCalculator
                    .new(current_user)
-                   .suggestions(
-                     User.where.not(id: matched_user_ids + skipped_user_ids + [current_user.id])
-                         .includes(:profile, :availability_slots)
-                   )
+                   .suggestions(candidates)
   end
 
   def create
     candidate = User.find(params[:user_id])
-    match = Match.find_or_initialize_by(user_a: current_user, user_b: candidate)
-    match.status ||= params[:status].presence || :pending
-    match.score = params[:score]
+    match = find_or_initialize_match(candidate)
+    match.status = :pending unless match.status_accepted?
+    match.score = params[:score] if params[:score].present?
+
     if match.save
-      if match.status_declined?
-        MatchDecision.create!(match: match, user: current_user, decision: :declined)
-        redirect_to matches_path, notice: "Skipped for now."
+      MatchDecision.find_or_create_by!(match: match, user: current_user, decision: :requested)
+
+      if requested_by?(match, match.other_user(current_user))
+        match.update!(status: :accepted)
+        MatchDecision.create!(match: match, user: current_user, decision: :accepted)
+        redirect_to matches_path, notice: "You are now training partners."
       else
-        redirect_to matches_path, notice: "Match saved. Waiting for confirmation."
+        redirect_to matches_path, notice: "Request sent."
       end
     else
       redirect_to matches_path, alert: "Could not save match."
@@ -57,6 +73,38 @@ class MatchesController < ApplicationController
     redirect_to matches_path, notice: "Match removed. We'll find new suggestions."
   end
 
+  def accept
+    match = current_user.matches.find(params[:id])
+    if incoming_request_for?(match)
+      match.update!(status: :accepted)
+      MatchDecision.create!(match: match, user: current_user, decision: :accepted)
+      redirect_to matches_path, notice: "You are now training partners."
+    else
+      redirect_to matches_path, alert: "Request not available."
+    end
+  end
+
+  def decline
+    match = current_user.matches.find(params[:id])
+    if incoming_request_for?(match)
+      match.update!(status: :declined)
+      MatchDecision.create!(match: match, user: current_user, decision: :declined)
+      redirect_to matches_path, notice: "Request declined."
+    else
+      redirect_to matches_path, alert: "Request not available."
+    end
+  end
+
+  def cancel
+    match = current_user.matches.find(params[:id])
+    if outgoing_request_for?(match)
+      match.destroy
+      redirect_to matches_path, notice: "Request cancelled."
+    else
+      redirect_to matches_path, alert: "Request not available."
+    end
+  end
+
   def chat
     @match = current_user.matches.find(params[:id])
   end
@@ -77,5 +125,28 @@ class MatchesController < ApplicationController
            .order(:start_at)
            .group_by(&:match_id)
            .transform_values(&:first)
+  end
+
+  def find_or_initialize_match(candidate)
+    Match.where(user_a: current_user, user_b: candidate)
+         .or(Match.where(user_a: candidate, user_b: current_user))
+         .first || Match.new(user_a: [current_user, candidate].min_by(&:id),
+                             user_b: [current_user, candidate].max_by(&:id))
+  end
+
+  def requested_by?(match, user)
+    match.match_decisions.any? { |decision| decision.decision_requested? && decision.user_id == user.id }
+  end
+
+  def incoming_request_for?(match)
+    match.status_pending? &&
+      requested_by?(match, match.other_user(current_user)) &&
+      !requested_by?(match, current_user)
+  end
+
+  def outgoing_request_for?(match)
+    match.status_pending? &&
+      requested_by?(match, current_user) &&
+      !requested_by?(match, match.other_user(current_user))
   end
 end

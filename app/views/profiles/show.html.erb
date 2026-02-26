@@ -41,6 +41,14 @@
             else "Flexible for other gyms"
             end %>
       </p>
+      <% if @profile.gym_latitude.present? && @profile.gym_longitude.present? %>
+        <div
+          data-controller="gym-map-display"
+          data-gym-map-display-lat-value="<%= @profile.gym_latitude %>"
+          data-gym-map-display-lng-value="<%= @profile.gym_longitude %>"
+          style="height: 200px; border-radius: 16px; overflow: hidden; background: #0f172a;"
+        ></div>
+      <% end %>
     </div>
   </div>
 
