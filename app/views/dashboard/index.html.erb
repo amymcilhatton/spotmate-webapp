@@ -93,7 +93,12 @@
   <div class="card">
     <h3 class="card-title">📈 Recent activity</h3>
     <% if @recent_log.present? %>
-      <p class="muted"><%= @recent_log.date %> · <%= @recent_log.kind.humanize %> session</p>
+      <p class="muted">
+        <%= @recent_log.date %>
+        <% if @recent_log.kind.present? %>
+          · <%= @recent_log.kind.humanize %> session
+        <% end %>
+      </p>
       <% if @recent_pr.present? %>
         <span class="badge">New PR this week!</span>
       <% end %>
