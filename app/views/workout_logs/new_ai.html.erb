@@ -1,0 +1,87 @@
+<h1>New workout</h1>
+
+<div>
+  <div class="ai-panel-container">
+    <div class="ai-panel card">
+    <h3>🤖 AI assistant</h3>
+    <p class="text-muted">Generate a workout plan with AI.</p>
+
+    <%= form_with model: @workout_log, id: "workout_log_form" do |form| %>
+      <div>
+        <%= form.label :date, "Date" %>
+        <%= form.date_field :date, required: true, id: "workout_log_date" %>
+      </div>
+
+      <%= form.hidden_field :title, value: "AI workout" %>
+      <%= form.text_area :notes,
+                         id: "workout_log_notes",
+                         class: "form-control",
+                         rows: 1,
+                         style: "display:none" %>
+      <%= hidden_field_tag :ai_plan_confirmed, "0", id: "ai_plan_confirmed" %>
+    <% end %>
+
+    <%= form_with url: ai_workouts_preview_path,
+                  method: :post,
+                  data: { turbo_frame: "ai_workout_preview" } do %>
+      <div>
+        <%= label_tag :goal, "Goal focus" %>
+        <%= text_field_tag :goal, "strength" %>
+      </div>
+
+      <div>
+        <%= label_tag :time_available, "Time available" %>
+        <%= text_field_tag :time_available, "60 mins" %>
+      </div>
+
+      <div>
+        <%= label_tag :equipment, "Equipment" %>
+        <%= text_field_tag :equipment, "barbell, weights" %>
+      </div>
+
+      <%= submit_tag "Generate with AI", class: "btn btn-secondary w-100" %>
+    <% end %>
+
+    <turbo-frame id="ai_workout_preview">
+      <div class="ai-preview-card">
+        <p class="text-muted">Your AI workout suggestion will appear here.</p>
+      </div>
+    </turbo-frame>
+
+    <div class="btn-row">
+      <button type="submit" class="btn btn-ghost btn-disabled" form="workout_log_form" disabled id="ai_save_button">
+        Save workout
+      </button>
+      <%= link_to "Back", workout_logs_path, class: "btn btn-ghost" %>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function insertAiPlanIntoWorkout() {
+    var source = document.getElementById("ai_plan_text");
+    var target = document.getElementById("workout_log_notes");
+    var confirmField = document.getElementById("ai_plan_confirmed");
+    if (!source || !target) {
+      alert("Could not find workout textarea.");
+      return;
+    }
+
+    var temp = document.createElement("div");
+    temp.innerHTML = source.innerHTML;
+    var text = temp.textContent || temp.innerText || "";
+    target.value = text.trim();
+    target.focus();
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    var saveButton = document.getElementById("ai_save_button");
+    if (saveButton) {
+      saveButton.removeAttribute("disabled");
+      saveButton.classList.remove("btn-disabled");
+    }
+    if (confirmField) {
+      confirmField.value = "1";
+    }
+  }
+</script>

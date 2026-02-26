@@ -1,0 +1,30 @@
+<h1>Edit workout</h1>
+
+<div>
+  <div class="card">
+    <%= form_with model: @workout_log do |form| %>
+      <div>
+        <%= form.label :date, "Date" %>
+        <%= form.date_field :date, required: true %>
+      </div>
+
+      <div>
+        <%= form.label :title, "Title" %>
+        <%= form.text_field :title, placeholder: "Push session" %>
+      </div>
+
+      <div>
+        <%= form.label :notes, "Workout details" %>
+        <%= form.text_area :notes,
+                           id: "workout_log_notes",
+                           rows: 12,
+                           class: "form-control" %>
+      </div>
+
+      <div class="btn-row">
+        <%= form.submit "Save changes", class: "btn" %>
+        <%= link_to "Back", workout_logs_path, class: "btn btn-ghost" %>
+      </div>
+    <% end %>
+  </div>
+</div>

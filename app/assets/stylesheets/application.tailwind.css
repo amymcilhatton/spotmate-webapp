@@ -1,1 +1,112 @@
 @import "tailwindcss";
+
+.ai-panel-container {
+  margin-top: 16px;
+}
+
+.ai-preview-card {
+  background: #11161c;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  color: #e5e7eb;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.workout-log-card {
+  background: #020617;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  padding: 16px 20px;
+  white-space: pre-line;
+}
+
+.workout-body {
+  max-height: none;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+  white-space: pre-line;
+}
+
+.workout-body--collapsed {
+  max-height: 180px;
+  position: relative;
+}
+
+.workout-body--collapsed::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px;
+  background: linear-gradient(to bottom, rgba(2, 6, 23, 0), #020617 85%);
+}
+
+.workout-actions {
+  margin-top: 8px;
+}
+
+.ai-preview-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.ai-preview-card__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.ai-preview-card__subtitle {
+  font-size: 0.8rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.ai-preview-card__body {
+  margin-top: 4px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.ai-preview-text {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.ai-preview-card h3,
+.ai-preview-card h4 {
+  font-weight: 600;
+  color: #ffffff;
+  margin-top: 1rem;
+}
+
+.ai-preview-card__footer {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-disabled {
+  filter: blur(1px);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  font: inherit;
+}
+
+.leaflet-container img {
+  max-width: none;
+}

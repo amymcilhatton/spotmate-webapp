@@ -1,0 +1,13 @@
+<div class="workout-log-card" style="background:#020617;border-radius:16px;padding:16px;margin-bottom:16px;">
+  <div class="workout-body"
+       style="max-height:220px;overflow:hidden;white-space:pre-line;transition:max-height 0.25s ease;">
+    <%= simple_format(workout_log.notes.to_s) %>
+  </div>
+
+  <button type="button"
+          class="btn btn-secondary"
+          onclick="toggleWorkout(this)"
+          style="margin-top:12px;">
+    View more
+  </button>
+</div>

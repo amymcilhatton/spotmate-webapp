@@ -82,6 +82,9 @@ GEM
       tzinfo (~> 2.0)
     addressable (2.8.8)
       public_suffix (>= 2.0.2, < 8.0)
+    anthropic (1.23.0)
+      cgi
+      connection_pool
     axlsx_rails (0.6.1)
       actionpack (>= 3.1)
       caxlsx (>= 3.0)
@@ -359,6 +362,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
+  anthropic (~> 1.23)
   axlsx_rails
   bootsnap
   capybara

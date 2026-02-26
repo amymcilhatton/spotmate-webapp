@@ -1,0 +1,22 @@
+<%= turbo_frame_tag "ai_workout_preview" do %>
+  <div class="card ai-preview-card">
+    <div class="ai-preview-card__header">
+      <h4 class="ai-preview-card__title">AI suggestion</h4>
+      <p class="ai-preview-card__subtitle muted">Draft workout – you can edit it before saving.</p>
+    </div>
+
+    <div class="ai-preview-card__body">
+      <div id="ai_plan_text" class="ai-preview-text">
+        <%= simple_format(plan_text) %>
+      </div>
+    </div>
+
+    <div class="ai-preview-card__footer">
+      <button type="button"
+              class="btn btn-primary"
+              onclick="insertAiPlanIntoWorkout()">
+        Use this plan
+      </button>
+    </div>
+  </div>
+<% end %>

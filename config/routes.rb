@@ -12,12 +12,17 @@ Rails.application.routes.draw do
     end
     member do
       post :rematch
+      post :accept
+      post :decline
+      post :cancel
       get :chat
       post :kudos
     end
   end
   resources :bookings, only: %i[index new create show destroy]
-  resources :workout_logs, only: %i[index new create]
+  resources :workout_logs, only: %i[index new create edit update destroy]
+  post "ai_workouts/preview", to: "ai_workouts#preview", as: :ai_workouts_preview
+  get "ai_workouts/preview", to: redirect("/workout_logs/new?mode=ai")
   resources :prs, only: %i[index new create destroy]
   resources :groups, only: %i[index show new create]
   resources :buddies, only: %i[index show]
