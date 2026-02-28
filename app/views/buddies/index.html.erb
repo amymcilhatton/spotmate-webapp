@@ -5,6 +5,44 @@
   </div>
 </div>
 
+<script>
+  window.toggleWorkout = window.toggleWorkout || function(button) {
+    var card = button.closest(".workout-log-card");
+    if (!card) return;
+
+    var body = card.querySelector(".workout-body");
+    if (!body) return;
+
+    var fade = card.querySelector(".workout-fade");
+    var collapsedHeight = body.dataset.collapsedHeight || "220px";
+
+    if (body.style.maxHeight && body.style.maxHeight !== "none") {
+      body.style.maxHeight = "none";
+      button.textContent = "View less";
+      if (fade) {
+        fade.style.position = "static";
+        fade.style.background = "none";
+        fade.style.paddingTop = "0";
+        fade.style.justifyContent = "flex-start";
+        fade.style.alignItems = "flex-start";
+        fade.style.marginTop = "8px";
+      }
+    } else {
+      body.style.maxHeight = collapsedHeight;
+      button.textContent = "View more";
+      if (fade) {
+        fade.style.position = "absolute";
+        fade.style.background = "linear-gradient(to top, rgba(2,6,23,0.95), rgba(2,6,23,0))";
+        fade.style.paddingTop = "2.5rem";
+        fade.style.justifyContent = "flex-end";
+        fade.style.alignItems = "flex-end";
+        fade.style.marginTop = "0";
+      }
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+</script>
+
 <div class="buddy-layout">
   <div class="card buddy-list">
     <h3 class="card-title">Your buddies</h3>
@@ -33,37 +71,44 @@
     <% end %>
   </div>
 
-  <div class="card buddy-feed">
-    <% if @buddy.present? %>
-      <div class="match-header">
-        <div class="avatar"></div>
-        <div>
-          <h3>Buddy space with <%= @buddy.name || @buddy.email %></h3>
-          <div class="chip-row">
-            <% if @buddy.profile&.experience_band.present? %>
-              <span class="badge"><%= @buddy.profile.experience_band.humanize %></span>
-            <% end %>
-            <% Array(@buddy.profile&.goals).first(3).each do |goal| %>
-              <span class="chip"><%= goal.humanize %></span>
-            <% end %>
-          </div>
-        </div>
+  <% active_buddy = @active_buddy || @buddy %>
+  <div class="right-column space-y-6">
+    <div class="card buddy-feed">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="card-title">Your shared workouts</h3>
+        <span class="text-xs text-slate-500">Visible to your buddies</span>
       </div>
-
-      <% if @logs.any? %>
+      <% if @my_shared_workouts.present? %>
         <div class="buddy-log-list">
-          <% @logs.each do |log| %>
-            <%= render "buddies/log_card", log: log %>
-          <% end %>
+          <%= render partial: "workouts/shared_workout",
+                     collection: @my_shared_workouts,
+                     as: :workout_log %>
         </div>
       <% else %>
-        <div class="empty-state">
-          <p><%= @buddy.name || @buddy.email %> hasn’t shared any workouts yet.</p>
-          <p class="muted">Once they share logs with buddies, you’ll see them here.</p>
-        </div>
+        <p class="muted">You haven’t shared any workouts yet.</p>
       <% end %>
-    <% else %>
-      <p class="muted">Select a buddy to view their shared workouts.</p>
+    </div>
+
+    <% if active_buddy.present? %>
+      <div class="card buddy-feed">
+        <%= render "buddy_space", buddy: active_buddy, logs: @logs %>
+      </div>
     <% end %>
+
+    <div class="card buddy-feed">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="card-title">Latest from your buddies</h3>
+      </div>
+      <% if @buddy_shared_workouts.present? %>
+        <div class="buddy-log-list">
+          <%= render partial: "workouts/shared_workout",
+                     collection: @buddy_shared_workouts,
+                     as: :workout_log,
+                     locals: { show_user: true } %>
+        </div>
+      <% else %>
+        <p class="muted">No shared workouts from your buddies yet.</p>
+      <% end %>
+    </div>
   </div>
 </div>

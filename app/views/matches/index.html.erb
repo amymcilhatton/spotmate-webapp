@@ -129,7 +129,7 @@
   <div class="grid">
     <% @suggestions.each do |suggestion| %>
       <% profile = suggestion.user.profile %>
-      <div class="card match-card">
+      <div class="card match-card flex flex-col h-full">
         <div class="match-header">
           <div class="avatar"></div>
           <div>
@@ -169,7 +169,7 @@
           </div>
         </div>
 
-        <div class="btn-row">
+        <div class="btn-row mt-auto">
           <%= button_to "Connect", matches_path(user_id: suggestion.user.id, score: suggestion.score),
                         method: :post,
                         class: "btn" %>

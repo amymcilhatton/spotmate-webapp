@@ -4,11 +4,11 @@ namespace :spotmate do
     raise "Faker is required (bundle exec rake spotmate:seed_demo)" unless defined?(Faker)
 
     gyms = [
-      { name: "PureGym Belfast City", city: "Belfast" },
-      { name: "Queen's PEC", city: "Belfast" },
-      { name: "Ulster Sports Centre", city: "Belfast" },
-      { name: "Better Gym Lisburn", city: "Lisburn" },
-      { name: "Anytime Fitness Ballymena", city: "Ballymena" }
+      { name: "PureGym Belfast City", city: "Belfast", lat: 54.5975, lng: -5.9301 },
+      { name: "Queen's PEC", city: "Belfast", lat: 54.5848, lng: -5.9346 },
+      { name: "Ulster Sports Centre", city: "Belfast", lat: 54.6002, lng: -5.9168 },
+      { name: "Better Gym Lisburn", city: "Lisburn", lat: 54.5131, lng: -6.0317 },
+      { name: "Anytime Fitness Ballymena", city: "Ballymena", lat: 54.8639, lng: -6.2760 }
     ]
 
     genders = %w[female male non_binary prefer_not_say]
@@ -41,6 +41,8 @@ namespace :spotmate do
         gender: gender,
         home_gym_name: gym[:name],
         home_city: gym[:city],
+        gym_latitude: gym[:lat],
+        gym_longitude: gym[:lng],
         travel_preference: travel.sample,
         experience_band: bands.sample,
         goals: goals.sample(rand(2..4)),
@@ -86,6 +88,7 @@ namespace :spotmate do
 
         Booking.find_or_create_by!(
           match: match,
+          creator: host,
           start_at: (index + 2).days.from_now.change(hour: 18, min: 0),
           end_at: (index + 2).days.from_now.change(hour: 19, min: 0)
         )

@@ -26,6 +26,9 @@ class WorkoutLogsController < ApplicationController
     end
 
     @workout_log = current_user.workout_logs.new(workout_log_params)
+    if @workout_log.shared_with_buddies? && @workout_log.shared_at.blank?
+      @workout_log.shared_at = Time.current
+    end
     if @workout_log.save
       redirect_to workout_logs_path, notice: "Workout saved."
     else
@@ -36,7 +39,12 @@ class WorkoutLogsController < ApplicationController
   def edit; end
 
   def update
-    if @workout_log.update(workout_log_params)
+    @workout_log.assign_attributes(workout_log_params)
+    if @workout_log.shared_with_buddies? && @workout_log.shared_at.blank?
+      @workout_log.shared_at = Time.current
+    end
+
+    if @workout_log.save
       redirect_to workout_logs_path, notice: "Workout updated."
     else
       render :edit, status: :unprocessable_entity

@@ -12,3 +12,6 @@ application.register("gym-map", GymMapController)
 
 import GymMapDisplayController from "./gym_map_display_controller"
 application.register("gym-map-display", GymMapDisplayController)
+
+import WorkoutToggleController from "./workout_toggle_controller"
+application.register("workout-toggle", WorkoutToggleController)

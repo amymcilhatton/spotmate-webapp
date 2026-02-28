@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_26_123000) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_26_174500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -54,7 +54,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_26_123000) do
   end
 
   create_table "bookings", force: :cascade do |t|
-    t.bigint "match_id", null: false
+    t.bigint "match_id"
     t.datetime "start_at"
     t.datetime "end_at"
     t.integer "status"
@@ -62,6 +62,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_26_123000) do
     t.datetime "updated_at", null: false
     t.boolean "reminder_enabled", default: true, null: false
     t.integer "reminder_minutes_before", default: 60, null: false
+    t.bigint "buddy_id"
+    t.bigint "creator_id", null: false
+    t.integer "buddy_status", default: 0, null: false
+    t.index ["buddy_id"], name: "index_bookings_on_buddy_id"
+    t.index ["creator_id"], name: "index_bookings_on_creator_id"
     t.index ["match_id"], name: "index_bookings_on_match_id"
   end
 
@@ -193,12 +198,27 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_26_123000) do
     t.boolean "shared_with_buddies", default: false, null: false
     t.boolean "contains_pr", default: false, null: false
     t.text "notes"
+    t.datetime "shared_at"
     t.index ["user_id"], name: "index_workout_logs_on_user_id"
+  end
+
+  create_table "workout_reactions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "workout_log_id", null: false
+    t.string "kind", null: false
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "workout_log_id"], name: "index_workout_reactions_on_user_log_kudos", unique: true, where: "((kind)::text = 'kudos'::text)"
+    t.index ["user_id"], name: "index_workout_reactions_on_user_id"
+    t.index ["workout_log_id"], name: "index_workout_reactions_on_workout_log_id"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "availability_slots", "users"
+  add_foreign_key "bookings", "users", column: "buddy_id"
+  add_foreign_key "bookings", "users", column: "creator_id"
   add_foreign_key "group_members", "groups"
   add_foreign_key "group_members", "users"
   add_foreign_key "match_decisions", "matches"
@@ -212,4 +232,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_26_123000) do
   add_foreign_key "workout_kudos", "users", column: "giver_id"
   add_foreign_key "workout_kudos", "workout_logs"
   add_foreign_key "workout_logs", "users"
+  add_foreign_key "workout_reactions", "users"
+  add_foreign_key "workout_reactions", "workout_logs"
 end

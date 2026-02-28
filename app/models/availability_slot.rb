@@ -13,6 +13,21 @@ class AvailabilitySlot < ApplicationRecord
     [overlap_end - overlap_start, 0].max
   end
 
+  def self.covers_range?(slots, start_at, end_at)
+    return false if start_at.blank? || end_at.blank?
+    return false if end_at <= start_at
+    return false if start_at.to_date != end_at.to_date
+
+    range_slot = AvailabilitySlot.new(
+      dow: start_at.wday,
+      start_min: (start_at.hour * 60) + start_at.min,
+      end_min: (end_at.hour * 60) + end_at.min
+    )
+    range_duration = range_slot.end_min - range_slot.start_min
+
+    slots.any? { |slot| slot.overlap_minutes(range_slot) >= range_duration }
+  end
+
   private
 
   def end_after_start

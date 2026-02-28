@@ -1,0 +1,27 @@
+<div class="match-header">
+  <div class="avatar"></div>
+  <div>
+    <h3>Buddy space with <%= buddy.name || buddy.email %></h3>
+    <div class="chip-row">
+      <% if buddy.profile&.experience_band.present? %>
+        <span class="badge"><%= buddy.profile.experience_band.humanize %></span>
+      <% end %>
+      <% Array(buddy.profile&.goals).first(3).each do |goal| %>
+        <span class="chip"><%= goal.humanize %></span>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<% if logs.present? %>
+  <div class="buddy-log-list">
+    <% logs.each do |log| %>
+      <%= render "workouts/shared_workout", workout_log: log %>
+    <% end %>
+  </div>
+<% else %>
+  <div class="empty-state">
+    <p><%= buddy.name || buddy.email %> hasn’t shared any workouts yet.</p>
+    <p class="muted">Once they share logs with buddies, you’ll see them here.</p>
+  </div>
+<% end %>

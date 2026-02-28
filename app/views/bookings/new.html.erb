@@ -2,30 +2,26 @@
 
 <div class="card">
   <%= form_with model: @booking, data: { session_form: true } do |form| %>
-    <div>
-      <%= form.label :match_id, "Buddy" %>
-      <%= form.select :match_id,
-                      @matches.map { |m| [m.other_user(current_user).name || m.other_user(current_user).email, m.id] },
-                      include_blank: true,
-                      data: { match_select: true } %>
-    </div>
+    <% if @buddy_flow %>
+      <div>
+        <%= form.label :buddy_id, "Buddy" %>
+        <%= form.select :buddy_id,
+                        options_for_select([["Choose a buddy", ""]] + @buddies.map { |buddy| [buddy.name || buddy.email, buddy.id] }, @booking.buddy_id),
+                        {},
+                        data: {
+                          buddy_select: true,
+                          buddy_slots: json_escape(@buddy_slots_by_id.to_json)
+                        } %>
+      </div>
 
-    <div>
-      <label>Suggested time (overlap)</label>
-      <select data-suggestion-select>
-        <option value="">Choose a suggested time</option>
-        <% @matches.each do |match| %>
-          <% buddy = match.other_user(current_user) %>
-          <% Array(@suggestions_by_match[match.id]).each do |window| %>
-            <option value="<%= match.id %>|<%= window[:start_at] %>|<%= window[:end_at] %>">
-              <%= buddy.name || buddy.email %> · <%= window[:start_at].strftime("%a %d %b %H:%M") %>–
-              <%= window[:end_at].strftime("%H:%M") %>
-            </option>
-          <% end %>
-        <% end %>
-      </select>
-      <p class="muted">Pick an overlap to auto-fill the session time.</p>
-    </div>
+      <div>
+        <label>Buddy availability</label>
+        <select data-buddy-slot-select disabled>
+          <option value="">Select a buddy first</option>
+        </select>
+        <p class="muted">Choose one of their weekly slots to auto-fill the session time.</p>
+      </div>
+    <% end %>
 
     <div>
       <%= form.label :start_at %>
@@ -36,6 +32,12 @@
       <%= form.label :end_at %>
       <%= form.datetime_local_field :end_at, data: { end_at: true } %>
     </div>
+
+    <% if @booking.availability_warning.present? %>
+      <div class="availability-pill <%= @booking.availability_warning_ok? ? "availability-pill--ok" : "availability-pill--warn" %>">
+        <%= @booking.availability_warning %>
+      </div>
+    <% end %>
 
     <div>
       <%= form.label :reminder_enabled, "Reminders" %>
@@ -51,17 +53,74 @@
 
 <script>
   document.querySelectorAll("[data-session-form]").forEach((form) => {
-    const suggestionSelect = form.querySelector("[data-suggestion-select]");
-    const matchSelect = form.querySelector("[data-match-select]");
+    const buddySelect = form.querySelector("[data-buddy-select]");
+    const buddySlotSelect = form.querySelector("[data-buddy-slot-select]");
     const startField = form.querySelector("[data-start-at]");
     const endField = form.querySelector("[data-end-at]");
 
-    suggestionSelect.addEventListener("change", () => {
-      if (!suggestionSelect.value) return;
-      const [matchId, startAt, endAt] = suggestionSelect.value.split("|");
-      matchSelect.value = matchId;
-      startField.value = startAt.slice(0, 16);
-      endField.value = endAt.slice(0, 16);
+    if (!buddySelect || !buddySlotSelect || !startField || !endField) return;
+
+    const slotsByBuddy = JSON.parse(buddySelect.dataset.buddySlots || "{}");
+    const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    const formatMinutes = (minutes) => {
+      const hour = Math.floor(minutes / 60);
+      const min = minutes % 60;
+      return `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+    };
+
+    const nextOccurrence = (dow, startMin, endMin) => {
+      const now = new Date();
+      const todayDow = now.getDay();
+      let daysUntil = (dow - todayDow + 7) % 7;
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      if (daysUntil === 0 && startMin <= nowMinutes) daysUntil = 7;
+
+      const target = new Date(now);
+      target.setDate(target.getDate() + daysUntil);
+
+      const startAt = new Date(target);
+      startAt.setHours(Math.floor(startMin / 60), startMin % 60, 0, 0);
+
+      const endAt = new Date(target);
+      endAt.setHours(Math.floor(endMin / 60), endMin % 60, 0, 0);
+
+      const toInputValue = (date) => date.toISOString().slice(0, 16);
+      return { startValue: toInputValue(startAt), endValue: toInputValue(endAt) };
+    };
+
+    const rebuildSlots = (buddyId) => {
+      const slots = slotsByBuddy[buddyId] || [];
+      buddySlotSelect.innerHTML = "";
+      if (!buddyId || slots.length === 0) {
+        buddySlotSelect.disabled = true;
+        buddySlotSelect.innerHTML = "<option value=\"\">No slots found</option>";
+        return;
+      }
+
+      buddySlotSelect.disabled = false;
+      buddySlotSelect.innerHTML = "<option value=\"\">Choose a slot</option>";
+      slots.forEach((slot) => {
+        const label = `${dayLabels[slot.dow]} · ${formatMinutes(slot.start_min)}–${formatMinutes(slot.end_min)}` +
+                      (slot.location_name ? ` · ${slot.location_name}` : "");
+        const option = document.createElement("option");
+        option.value = `${slot.dow}|${slot.start_min}|${slot.end_min}`;
+        option.textContent = label;
+        buddySlotSelect.appendChild(option);
+      });
+    };
+
+    buddySelect.addEventListener("change", () => {
+      const buddyId = buddySelect.value;
+      rebuildSlots(buddyId);
+    });
+
+    buddySlotSelect.addEventListener("change", () => {
+      if (!buddySlotSelect.value) return;
+      const [dow, startMin, endMin] = buddySlotSelect.value.split("|").map(Number);
+      const next = nextOccurrence(dow, startMin, endMin);
+      startField.value = next.startValue;
+      endField.value = next.endValue;
     });
   });
 </script>

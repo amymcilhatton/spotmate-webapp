@@ -3,27 +3,51 @@
     <h1>Your sessions</h1>
     <p class="muted">Manage your training sessions with your gym buddies.</p>
   </div>
-  <%= link_to "New session", new_booking_path, class: "btn" %>
+  <div class="btn-row">
+    <%= link_to "New session", new_booking_path, class: "btn btn-ghost" %>
+    <%= link_to "New buddy session", new_booking_path(buddy: true), class: "btn" %>
+  </div>
 </div>
 
 <div class="card">
   <% if @this_week_booking.present? %>
-    <% buddy = @this_week_booking.match.other_user(current_user) %>
-    <% buddy_profile = buddy.profile %>
+    <% partner = @this_week_booking.partner_for(current_user) %>
+    <% partner_profile = partner&.profile %>
     <h3>Next session</h3>
     <p>
       Next session:
       <strong><%= @this_week_booking.start_at.strftime("%a %d %b at %H:%M") %></strong>
     </p>
-    <p class="muted">
-      <%= buddy.name || buddy.email %>
-      <% if buddy_profile&.home_gym_name.present? %>
-        · <%= buddy_profile.home_gym_name %>
+    <div class="muted flex items-center gap-2">
+      <% if @this_week_booking.buddy_session? %>
+        <span class="avatar">
+          <% if partner&.avatar&.attached? %>
+            <%= image_tag url_for(partner.avatar), alt: "#{partner.name || partner.email} avatar" %>
+          <% else %>
+            <span><%= (partner&.name.presence || partner&.email).to_s.first.upcase %></span>
+          <% end %>
+        </span>
+        <span>
+          <%= @this_week_booking.partner_first_name_for(current_user) || (partner&.name || partner&.email) %>
+          <% if partner_profile&.home_gym_name.present? %>
+            · <%= partner_profile.home_gym_name %>
+          <% end %>
+        </span>
+        <% status_label = @this_week_booking.status_label_for(current_user) %>
+        <% if status_label.present? %>
+          <span class="<%= @this_week_booking.status_badge_class_for(current_user) %>">
+            <%= status_label %>
+          </span>
+        <% end %>
+      <% else %>
+        Solo session
       <% end %>
-    </p>
+    </div>
     <div class="btn-row">
       <%= link_to "Add to calendar", booking_path(@this_week_booking, format: :ics), class: "btn btn-ghost" %>
-      <%= link_to "Message buddy", chat_match_path(@this_week_booking.match), class: "btn btn-ghost" %>
+      <% if @this_week_booking.buddy_session? %>
+        <%= link_to "Message buddy", chat_match_path(@this_week_booking.match), class: "btn btn-ghost" %>
+      <% end %>
       <%= button_to "Cancel session", booking_path(@this_week_booking), method: :delete, class: "btn btn-ghost" %>
     </div>
   <% else %>
@@ -33,14 +57,52 @@
   <% end %>
 </div>
 
+<% if @pending_requests.any? %>
+  <div class="card">
+    <h3>Session requests</h3>
+    <ul class="slot-list">
+      <% @pending_requests.each do |booking| %>
+        <% partner = booking.partner_for(current_user) %>
+        <% partner_profile = partner&.profile %>
+        <li class="slot-row">
+          <div>
+            <strong><%= booking.start_at.strftime("%a %d %b") %></strong>
+            · <%= booking.start_at.strftime("%H:%M") %>–<%= booking.end_at.strftime("%H:%M") %>
+          </div>
+          <div class="muted flex items-center gap-2">
+            <span class="avatar">
+              <% if partner&.avatar&.attached? %>
+                <%= image_tag url_for(partner.avatar), alt: "#{partner.name || partner.email} avatar" %>
+              <% else %>
+                <span><%= (partner&.name.presence || partner&.email).to_s.first.upcase %></span>
+              <% end %>
+            </span>
+            <span>
+              <%= booking.partner_first_name_for(current_user) || (partner&.name || partner&.email) %>
+              <% if partner_profile&.home_gym_name.present? %>
+                · <%= partner_profile.home_gym_name %>
+              <% end %>
+            </span>
+            <span class="badge badge-muted">Invitation</span>
+          </div>
+          <div class="btn-row">
+            <%= button_to "Accept", accept_booking_path(booking), method: :patch, class: "btn btn-small" %>
+            <%= button_to "Decline", decline_booking_path(booking), method: :patch, class: "btn btn-ghost btn-small" %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
 <div class="sessions-grid">
   <div class="card">
     <h3>Upcoming sessions</h3>
     <% if @upcoming_bookings.any? %>
       <ul class="slot-list">
         <% @upcoming_bookings.each do |booking| %>
-          <% buddy = booking.match.other_user(current_user) %>
-          <% buddy_profile = buddy.profile %>
+          <% partner = booking.partner_for(current_user) %>
+          <% partner_profile = partner&.profile %>
           <% label = if booking.start_at.to_date == Date.current
                        "Today"
                      elsif booking.start_at.to_date == Date.tomorrow
@@ -53,16 +115,37 @@
               <strong><%= booking.start_at.strftime("%a %d %b") %></strong>
               · <%= booking.start_at.strftime("%H:%M") %>–<%= booking.end_at.strftime("%H:%M") %>
             </div>
-            <div class="muted">
-              <%= buddy.name || buddy.email %>
-              <% if buddy_profile&.home_gym_name.present? %>
-                · <%= buddy_profile.home_gym_name %>
+            <div class="muted flex items-center gap-2">
+              <% if booking.buddy_session? %>
+                <span class="avatar">
+                  <% if partner&.avatar&.attached? %>
+                    <%= image_tag url_for(partner.avatar), alt: "#{partner.name || partner.email} avatar" %>
+                  <% else %>
+                    <span><%= (partner&.name.presence || partner&.email).to_s.first.upcase %></span>
+                  <% end %>
+                </span>
+                <span>
+                  <%= booking.partner_first_name_for(current_user) || (partner&.name || partner&.email) %>
+                  <% if partner_profile&.home_gym_name.present? %>
+                    · <%= partner_profile.home_gym_name %>
+                  <% end %>
+                </span>
+                <% status_label = booking.status_label_for(current_user) %>
+                <% if status_label.present? %>
+                  <span class="<%= booking.status_badge_class_for(current_user) %>">
+                    <%= status_label %>
+                  </span>
+                <% end %>
+              <% else %>
+                Solo session
               <% end %>
             </div>
             <span class="badge badge-muted"><%= label %></span>
             <div class="btn-row">
               <%= link_to "Add to calendar", booking_path(booking, format: :ics), class: "btn btn-ghost btn-small" %>
-              <%= link_to "Message", chat_match_path(booking.match), class: "btn btn-ghost btn-small" %>
+              <% if booking.buddy_session? %>
+                <%= link_to "Message", chat_match_path(booking.match), class: "btn btn-ghost btn-small" %>
+              <% end %>
               <%= button_to "Cancel", booking_path(booking), method: :delete, class: "btn btn-ghost btn-small" %>
             </div>
           </li>
@@ -80,10 +163,29 @@
         <div class="calendar-day">
           <div class="calendar-day-header"><%= day.strftime("%a %d") %></div>
           <% Array(@bookings_by_day[day]).each do |booking| %>
-            <% buddy = booking.match.other_user(current_user) %>
+            <% partner = booking.partner_for(current_user) %>
             <div class="calendar-slot">
               <strong><%= booking.start_at.strftime("%H:%M") %></strong>–<%= booking.end_at.strftime("%H:%M") %>
-              <div class="muted"><%= buddy.name || buddy.email %></div>
+              <div class="muted flex items-center gap-2">
+                <% if booking.buddy_session? %>
+                  <span class="avatar">
+                    <% if partner&.avatar&.attached? %>
+                      <%= image_tag url_for(partner.avatar), alt: "#{partner.name || partner.email} avatar" %>
+                    <% else %>
+                      <span><%= (partner&.name.presence || partner&.email).to_s.first.upcase %></span>
+                    <% end %>
+                  </span>
+                  <span>With <%= booking.partner_first_name_for(current_user) || (partner&.name || partner&.email) %></span>
+                  <% status_label = booking.status_label_for(current_user) %>
+                  <% if status_label.present? %>
+                    <span class="<%= booking.status_badge_class_for(current_user) %>">
+                      <%= status_label %>
+                    </span>
+                  <% end %>
+                <% else %>
+                  Solo session
+                <% end %>
+              </div>
             </div>
           <% end %>
           <% if Array(@bookings_by_day[day]).empty? %>
@@ -101,10 +203,29 @@
     <% if @past_bookings.any? %>
       <ul class="slot-list">
         <% @past_bookings.first(3).each do |booking| %>
-          <% buddy = booking.match.other_user(current_user) %>
           <li class="slot-row muted">
             <%= booking.start_at.strftime("%a %d %b") %> · <%= booking.start_at.strftime("%H:%M") %>–<%= booking.end_at.strftime("%H:%M") %>
-            · <%= buddy.name || buddy.email %>
+            ·
+            <% if booking.buddy_session? %>
+              <span class="inline-flex items-center gap-2">
+                <span class="avatar">
+                  <% if booking.partner_for(current_user)&.avatar&.attached? %>
+                    <%= image_tag url_for(booking.partner_for(current_user).avatar), alt: "#{booking.partner_for(current_user).name || booking.partner_for(current_user).email} avatar" %>
+                  <% else %>
+                    <span><%= (booking.partner_for(current_user)&.name.presence || booking.partner_for(current_user)&.email).to_s.first.upcase %></span>
+                  <% end %>
+                </span>
+                <span>With <%= booking.partner_first_name_for(current_user) || (booking.partner_for(current_user)&.name || booking.partner_for(current_user)&.email) %></span>
+                <% status_label = booking.status_label_for(current_user) %>
+                <% if status_label.present? %>
+                  <span class="<%= booking.status_badge_class_for(current_user) %>">
+                    <%= status_label %>
+                  </span>
+                <% end %>
+              </span>
+            <% else %>
+              Solo session
+            <% end %>
             <%= link_to "Log workout", new_workout_log_path, class: "btn btn-ghost btn-small" %>
           </li>
         <% end %>

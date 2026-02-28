@@ -3,6 +3,27 @@
 <div class="card">
   <p><strong>Starts:</strong> <%= @booking.start_at.strftime("%b %d %H:%M") %></p>
   <p><strong>Ends:</strong> <%= @booking.end_at.strftime("%b %d %H:%M") %></p>
+  <% if @booking.buddy_session? %>
+    <div class="muted flex items-center gap-2">
+      <% partner = @booking.partner_for(current_user) %>
+      <span class="avatar">
+        <% if partner&.avatar&.attached? %>
+          <%= image_tag url_for(partner.avatar), alt: "#{partner.name || partner.email} avatar" %>
+        <% else %>
+          <span><%= (partner&.name.presence || partner&.email).to_s.first.upcase %></span>
+        <% end %>
+      </span>
+      <span><strong>With:</strong> <%= @booking.partner_first_name_for(current_user) || (partner&.name || partner&.email) %></span>
+      <% status_label = @booking.status_label_for(current_user) %>
+      <% if status_label.present? %>
+        <span class="<%= @booking.status_badge_class_for(current_user) %>">
+          <%= status_label %>
+        </span>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="muted"><strong>Type:</strong> Solo session</p>
+  <% end %>
 
   <%= link_to "Download calendar invite", booking_path(@booking, format: :ics), class: "btn" %>
 </div>

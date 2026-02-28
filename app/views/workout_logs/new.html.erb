@@ -21,6 +21,16 @@
                            class: "form-control" %>
       </div>
 
+      <div class="mt-4">
+        <%= form.label :shared_with_buddies, class: "inline-flex items-center gap-2 text-sm text-slate-200" do %>
+          <%= form.check_box :shared_with_buddies, class: "rounded border-slate-600" %>
+          <span>Share this workout with my buddies</span>
+        <% end %>
+        <p class="text-xs text-slate-500 mt-1">
+          Shared workouts appear in your buddies feed so they can comment and give kudos.
+        </p>
+      </div>
+
       <div class="btn-row">
         <button type="button" class="btn btn-secondary" id="insert-workout-template-button">
           Insert workout template

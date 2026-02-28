@@ -1,0 +1,55 @@
+<div class="card buddy-log workout-log-card">
+  <% tags = workout_highlight_tags(workout_log) %>
+  <% full_text =
+       if workout_log.respond_to?(:notes) && workout_log.notes.present?
+         workout_log.notes
+       elsif workout_log.respond_to?(:ai_notes) && workout_log.ai_notes.present?
+         workout_log.ai_notes
+       end %>
+
+  <div class="buddy-log-header">
+    <div>
+      <% if local_assigns[:show_user] %>
+        <div class="muted"><%= workout_log.user.name || workout_log.user.email %></div>
+      <% end %>
+      <strong><%= workout_log.date&.strftime("%a %d %b") %></strong>
+      <div class="muted"><%= workout_log.title.presence || "Full body session" %></div>
+    </div>
+    <% if workout_log.contains_pr? %>
+      <span class="pill">New PR</span>
+    <% end %>
+  </div>
+
+  <% if tags.any? %>
+    <div class="mt-2 flex flex-wrap gap-2">
+      <% tags.each do |tag| %>
+        <span class="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-100">
+          <%= tag %>
+        </span>
+      <% end %>
+      <span class="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-100">
+        Shared with buddies
+      </span>
+    </div>
+  <% end %>
+
+  <% if full_text.present? %>
+    <div class="workout-body-wrapper" style="position:relative;margin-top:12px;">
+      <div class="workout-body"
+           data-collapsed-height="9em"
+           style="max-height:9em;overflow:hidden;white-space:pre-line;line-height:1.5;transition:max-height 0.25s ease;">
+        <%= simple_format(full_text.to_s) %>
+      </div>
+      <div class="workout-fade"
+           style="position:absolute;left:0;right:0;bottom:0;padding-top:2.5rem;display:flex;justify-content:flex-end;align-items:flex-end;background:linear-gradient(to top, rgba(2,6,23,0.95), rgba(2,6,23,0));z-index:1;">
+        <button type="button"
+                class="btn btn-secondary"
+                onclick="toggleWorkout(this)">
+          View more
+        </button>
+      </div>
+    </div>
+  <% end %>
+
+  <%= render "workout_logs/reactions", workout_log: workout_log %>
+</div>

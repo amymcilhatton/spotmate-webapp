@@ -13,12 +13,15 @@ class User < ApplicationRecord
   has_many :prs, dependent: :destroy
   has_many :group_members, dependent: :destroy
   has_many :groups, through: :group_members
+  has_many :created_bookings, class_name: "Booking", foreign_key: :creator_id, dependent: :destroy
+  has_many :buddy_bookings, class_name: "Booking", foreign_key: :buddy_id, dependent: :nullify
   has_many :survey_responses, dependent: :destroy
   has_many :matches_as_a, class_name: "Match", foreign_key: :user_a_id, dependent: :destroy
   has_many :matches_as_b, class_name: "Match", foreign_key: :user_b_id, dependent: :destroy
   has_many :match_decisions, dependent: :destroy
   has_many :workout_comments, foreign_key: :author_id, dependent: :destroy
   has_many :workout_kudos, foreign_key: :giver_id, dependent: :destroy
+  has_many :workout_reactions, dependent: :destroy
 
   def matches
     Match.where("user_a_id = ? OR user_b_id = ?", id, id)
@@ -29,6 +32,10 @@ class User < ApplicationRecord
                      .where("user_a_id = :id OR user_b_id = :id", id: id)
     user_ids = match_ids.pluck(:user_a_id, :user_b_id).flatten.uniq - [id]
     User.where(id: user_ids)
+  end
+
+  def buddies
+    accepted_buddies
   end
 
   validate :avatar_type

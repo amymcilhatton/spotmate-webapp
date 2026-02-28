@@ -1,0 +1,35 @@
+<% reactions = workout_log.workout_reactions.to_a %>
+<% kudos_reaction = reactions.find { |reaction| reaction.kudos? && reaction.user_id == current_user.id } %>
+<% kudos_count = reactions.count(&:kudos?) %>
+
+<div class="buddy-actions">
+  <% if kudos_reaction.present? %>
+    <%= button_to "🔥 #{kudos_count}", workout_log_workout_reaction_path(workout_log, kudos_reaction),
+                  method: :delete, class: "btn btn-ghost btn-small" %>
+  <% else %>
+    <%= button_to "Give kudos · 🔥 #{kudos_count}", workout_log_workout_reactions_path(workout_log),
+                  method: :post,
+                  params: { workout_reaction: { kind: "kudos" } },
+                  class: "btn btn-ghost btn-small" %>
+  <% end %>
+</div>
+
+<div class="buddy-comments">
+  <div class="muted">Comments</div>
+  <div id="reactions-comments-<%= workout_log.id %>">
+    <% reactions.select(&:comment?).sort_by(&:created_at).reverse.first(3).each do |reaction| %>
+      <div class="comment">
+        <strong><%= reaction.user.name || reaction.user.email %></strong>
+        <span class="muted"><%= time_ago_in_words(reaction.created_at) %> ago</span>
+        <div><%= reaction.body %></div>
+      </div>
+    <% end %>
+  </div>
+  <%= form_with url: workout_log_workout_reactions_path(workout_log),
+                scope: :workout_reaction,
+                data: { turbo: true } do |form| %>
+    <%= form.hidden_field :kind, value: "comment" %>
+    <%= form.text_field :body, placeholder: "Add a comment…" %>
+    <%= form.submit "Send", class: "btn btn-ghost btn-small" %>
+  <% end %>
+</div>

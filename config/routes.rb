@@ -19,7 +19,12 @@ Rails.application.routes.draw do
       post :kudos
     end
   end
-  resources :bookings, only: %i[index new create show destroy]
+  resources :bookings, only: %i[index new create show destroy] do
+    member do
+      patch :accept
+      patch :decline
+    end
+  end
   resources :workout_logs, only: %i[index new create edit update destroy]
   post "ai_workouts/preview", to: "ai_workouts#preview", as: :ai_workouts_preview
   get "ai_workouts/preview", to: redirect("/workout_logs/new?mode=ai")
@@ -30,6 +35,7 @@ Rails.application.routes.draw do
   resources :workout_logs, only: [] do
     resources :workout_comments, only: %i[create]
     resources :workout_kudos, only: %i[create destroy]
+    resources :workout_reactions, only: %i[create destroy]
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

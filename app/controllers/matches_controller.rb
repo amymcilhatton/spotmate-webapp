@@ -2,11 +2,13 @@ class MatchesController < ApplicationController
   def index
     @profile = current_user.profile
     @matches = current_user.matches.includes(:user_a, :user_b, :match_decisions)
-    matched_user_ids = @matches.flat_map { |match| [match.user_a_id, match.user_b_id] }.uniq
+    decided_matches = @matches.reject { |match| match.match_decisions.none? }
+    matched_user_ids = decided_matches.flat_map { |match| [match.user_a_id, match.user_b_id] }.uniq
     @accepted_matches = @matches.select(&:status_accepted?)
     pending_matches = @matches.select(&:status_pending?)
     @incoming_requests = pending_matches.select { |match| incoming_request_for?(match) }
     @outgoing_requests = pending_matches.select { |match| outgoing_request_for?(match) }
+    suggestion_matches = pending_matches.select { |match| match.match_decisions.none? }
     @upcoming_by_match = upcoming_bookings_for(@accepted_matches)
     skipped_user_ids = Array(session[:skipped_user_ids])
 
@@ -17,13 +19,25 @@ class MatchesController < ApplicationController
     if @profile&.gym_latitude.present? && @profile&.gym_longitude.present?
       candidates = candidates.select do |user|
         distance = @profile.distance_to(user.profile)
-        distance && distance <= radius
+        distance.nil? || distance <= radius
       end
     end
 
-    @suggestions = Matching::MatchCalculator
-                   .new(current_user)
-                   .suggestions(candidates)
+    calculator = Matching::MatchCalculator.new(current_user)
+    @suggestions = calculator.suggestions(candidates)
+    if suggestion_matches.any?
+      suggestion_by_user_id = suggestion_matches.index_by { |match| match.other_user(current_user).id }
+      @suggestions = @suggestions.map do |suggestion|
+        match = suggestion_by_user_id[suggestion.user.id]
+        next suggestion unless match
+
+        suggestion.score = match.score if match.score.present?
+        if match.overlap_windows_json.present?
+          suggestion.overlap_windows = match.overlap_windows_json
+        end
+        suggestion
+      end.sort_by { |suggestion| -suggestion.score }
+    end
   end
 
   def create
