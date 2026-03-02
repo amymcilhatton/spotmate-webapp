@@ -10,7 +10,7 @@
 
     <div data-strength-fields>
       <%= form.label :exercise, "Exercise or event" %>
-      <%= form.text_field :exercise, list: "strength-exercise-list", required: true %>
+      <%= form.text_field :exercise, list: "strength-exercise-list", required: true, data: { pr_exercise: true } %>
       <datalist id="strength-exercise-list">
         <% @strength_suggestions.each do |name| %>
           <option value="<%= name %>"></option>
@@ -21,7 +21,7 @@
 
     <div data-endurance-fields style="display:none">
       <%= label_tag :endurance_exercise, "Exercise or event" %>
-      <%= text_field_tag "pr[exercise]", @pr.exercise, list: "endurance-exercise-list", required: true %>
+      <%= text_field_tag "pr[exercise]", @pr.exercise, list: "endurance-exercise-list", required: true, data: { pr_exercise: true } %>
       <datalist id="endurance-exercise-list">
         <% @endurance_suggestions.each do |name| %>
           <option value="<%= name %>"></option>
@@ -38,12 +38,18 @@
     <div data-endurance-fields style="display:none">
       <%= label_tag :time_input, "Time (mm:ss or hh:mm:ss)" %>
       <%= text_field_tag :time_input, "", placeholder: "24:30", data: { pr_time: true } %>
+      <%= hidden_field_tag "pr[value]", @pr.value, data: { pr_value: true } %>
       <p class="muted">We’ll convert this to seconds for now.</p>
     </div>
 
-    <div>
+    <div data-strength-fields>
       <%= form.label :unit %>
-      <%= form.select :unit, [["kg", "kg"], ["lb", "lb"], ["reps", "reps"], ["sec", "sec"]], data: { pr_unit: true } %>
+      <%= form.select :unit, [["kg", "kg"], ["lb", "lb"], ["reps", "reps"]], data: { pr_unit: true } %>
+    </div>
+
+    <div data-endurance-fields style="display:none">
+      <%= form.label :unit %>
+      <%= select_tag "pr[unit]", options_for_select([["sec", "sec"], ["min", "min"]], @pr.unit), data: { pr_unit: true } %>
     </div>
 
     <div>
@@ -52,8 +58,8 @@
     </div>
 
     <div>
-      <%= label_tag :notes, "Notes (coming soon)" %>
-      <%= text_field_tag :notes, "", disabled: true %>
+      <%= form.label :notes, "Notes" %>
+      <%= form.text_area :notes, rows: 3 %>
     </div>
 
     <div>
@@ -68,16 +74,44 @@
     const strengthFields = form.querySelectorAll("[data-strength-fields]");
     const enduranceFields = form.querySelectorAll("[data-endurance-fields]");
     const timeInput = form.querySelector("[data-pr-time]");
-    const valueField = form.querySelector("[data-pr-value]");
-    const unitField = form.querySelector("[data-pr-unit]");
+    const valueFields = form.querySelectorAll("[data-pr-value]");
+    const unitFields = form.querySelectorAll("[data-pr-unit]");
+    const exerciseFields = form.querySelectorAll("[data-pr-exercise]");
 
     const toggle = () => {
       const isEndurance = typeSelect.value === "endurance";
       strengthFields.forEach((el) => (el.style.display = isEndurance ? "none" : "block"));
       enduranceFields.forEach((el) => (el.style.display = isEndurance ? "block" : "none"));
-      if (isEndurance) {
-        unitField.value = "sec";
-      }
+
+      exerciseFields.forEach((field) => {
+        const inEndurance = field.closest("[data-endurance-fields]");
+        const inStrength = field.closest("[data-strength-fields]");
+        if (isEndurance && inStrength) field.disabled = true;
+        if (!isEndurance && inStrength) field.disabled = false;
+        if (isEndurance && inEndurance) field.disabled = false;
+        if (!isEndurance && inEndurance) field.disabled = true;
+      });
+
+      valueFields.forEach((field) => {
+        const inEndurance = field.closest("[data-endurance-fields]");
+        const inStrength = field.closest("[data-strength-fields]");
+        if (isEndurance && inStrength) field.disabled = true;
+        if (!isEndurance && inStrength) field.disabled = false;
+        if (isEndurance && inEndurance) field.disabled = false;
+        if (!isEndurance && inEndurance) field.disabled = true;
+      });
+      if (timeInput) timeInput.disabled = !isEndurance;
+      unitFields.forEach((field) => {
+        const inEndurance = field.closest("[data-endurance-fields]");
+        const inStrength = field.closest("[data-strength-fields]");
+        if (isEndurance && inStrength) field.disabled = true;
+        if (!isEndurance && inStrength) field.disabled = false;
+        if (isEndurance && inEndurance) field.disabled = false;
+        if (!isEndurance && inEndurance) field.disabled = true;
+        if (isEndurance && inEndurance && field.value !== "sec" && field.value !== "min") {
+          field.value = "sec";
+        }
+      });
     };
 
     const parseTime = (value) => {
@@ -93,12 +127,27 @@
       return null;
     };
 
-    if (timeInput) {
-      timeInput.addEventListener("input", () => {
-        const seconds = parseTime(timeInput.value);
-        if (seconds && valueField) valueField.value = seconds;
+    const syncTimeValue = () => {
+      if (!timeInput) return;
+      const seconds = parseTime(timeInput.value);
+      if (!seconds) return;
+      const unitField = Array.from(unitFields).find((field) => !field.disabled);
+      const unitValue = unitField ? unitField.value : "sec";
+      const normalized = unitValue === "min" ? seconds / 60.0 : seconds;
+      valueFields.forEach((field) => {
+        if (!field.disabled) field.value = normalized;
       });
+    };
+
+    if (timeInput) {
+      timeInput.addEventListener("input", syncTimeValue);
     }
+
+    form.addEventListener("submit", () => {
+      if (typeSelect.value === "endurance") {
+        syncTimeValue();
+      }
+    });
 
     typeSelect.addEventListener("change", toggle);
     toggle();

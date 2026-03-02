@@ -28,7 +28,7 @@
               <span class="pr-icon">🏋️</span>
               <strong><%= current.exercise %></strong>
             </div>
-            <div class="pr-value"><%= current.value %> <%= current.unit %></div>
+            <div class="pr-value"><%= pr_value_with_unit(current) %></div>
             <p class="muted">Achieved <%= current.date %></p>
             <% if delta.present? %>
               <span class="badge">+<%= delta.round(1) %> <%= current.unit %> since last PR</span>
@@ -62,11 +62,11 @@
                     <% change = previous_entry.present? ? entry.value.to_f - previous_entry.value.to_f : nil %>
                     <tr>
                       <td><%= entry.date %></td>
-                      <td><%= entry.value %> <%= entry.unit %></td>
+                      <td><%= pr_value_with_unit(entry) %></td>
                       <td>
                         <% if change.present? %>
                           <span class="<%= change.positive? ? "pos" : "neg" %>">
-                            <%= change.positive? ? "+" : "-" %><%= change.abs.round(1) %>
+                            <%= pr_delta_display(change, entry.unit) %>
                           </span>
                         <% else %>
                           —
@@ -76,20 +76,14 @@
                   <% end %>
                 </tbody>
               </table>
-              <svg class="pr-line pr-line--bright" viewBox="0 0 100 40">
-                <% values = ordered.map { |e| e.value.to_f } %>
-                <% max = values.max || 1 %>
-                <% min = values.min || 0 %>
-                <% points = values.reverse.each_with_index.map do |val, idx|
-                     x = (idx.to_f / [values.size - 1, 1].max) * 100
-                     y = 35 - ((val - min) / [max - min, 1].max) * 30
-                     "#{x},#{y}"
-                   end.join(" ") %>
-                <polyline points="<%= points %>" fill="none" stroke="currentColor" stroke-width="2"></polyline>
-              </svg>
+            <!-- line graph removed -->
               <div class="modal-notes">
                 <strong>Notes</strong>
-                <p class="muted">No notes recorded for this PR yet.</p>
+                <% if current.notes.present? %>
+                  <p class="muted"><%= current.notes %></p>
+                <% else %>
+                  <p class="muted">No notes recorded for this PR yet.</p>
+                <% end %>
               </div>
               <div class="modal-footer">
                 <button class="btn" data-dialog-close>Close</button>
@@ -126,10 +120,12 @@
               <span class="pr-icon">⏱️</span>
               <strong><%= current.exercise %></strong>
             </div>
-            <div class="pr-value"><%= current.value %> <%= current.unit %></div>
+            <div class="pr-value"><%= pr_value_with_unit(current) %></div>
             <p class="muted">Achieved <%= current.date %></p>
             <% if delta.present? %>
-              <span class="badge"><%= delta.negative? ? "-" : "+" %><%= delta.abs.round(1) %> <%= current.unit %> since last PR</span>
+              <span class="badge <%= endurance_badge_class(delta) %>">
+                <%= endurance_change_label(delta, current.unit) %> since last PR
+              </span>
             <% else %>
               <span class="badge badge-muted">First recorded PR</span>
             <% end %>
@@ -142,6 +138,54 @@
               View history
             </button>
           </div>
+          <dialog id="history-<%= exercise.parameterize %>" class="modal modal-narrow">
+            <div class="card modal-card">
+              <div class="modal-titlebar">
+                <h3><%= current.exercise %> PR History</h3>
+              </div>
+              <table class="pr-history-table pr-history-table--styled">
+                <thead>
+                  <tr><th>Date</th><th>Value</th><th>Change</th></tr>
+                </thead>
+                <tbody>
+                  <% ordered.each_with_index do |entry, idx| %>
+                    <% previous_entry = ordered[idx + 1] %>
+                    <% change = previous_entry.present? ? entry.value.to_f - previous_entry.value.to_f : nil %>
+                    <tr>
+                      <td><%= entry.date %></td>
+                      <td><%= pr_value_with_unit(entry) %></td>
+                      <td>
+                        <% if change.present? %>
+                          <span class="<%= endurance_change_class(change) %>">
+                            <%= endurance_change_label(change, entry.unit) %>
+                          </span>
+                        <% else %>
+                          —
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+              <!-- line graph removed -->
+              <div class="modal-notes">
+                <strong>Notes</strong>
+                <% if current.notes.present? %>
+                  <p class="muted"><%= current.notes %></p>
+                <% else %>
+                  <p class="muted">No notes recorded for this PR yet.</p>
+                <% end %>
+              </div>
+              <div class="modal-footer">
+                <button class="btn" data-dialog-close>Close</button>
+                <% if ordered.size > 1 %>
+                  <%= button_to "Delete PR", pr_path(current), method: :delete, class: "btn btn-ghost btn-small" %>
+                <% else %>
+                  <button class="btn btn-ghost btn-small" disabled>Delete PR</button>
+                <% end %>
+              </div>
+            </div>
+          </dialog>
         <% end %>
       </div>
     <% else %>
@@ -162,7 +206,6 @@
     <span class="chip badge-shiny chip-locked">Consistency champ</span>
     <span class="chip badge-shiny chip-locked">Race day finisher</span>
   </div>
-  <p class="muted">More achievements coming soon.</p>
 </div>
 
 <script>

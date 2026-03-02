@@ -63,4 +63,109 @@ module ApplicationHelper
 
     tags
   end
+
+  def pr_value_with_unit(pr)
+    value = pr_display_value(pr)
+    unit = pr_display_unit(pr)
+    [value, unit].compact.map(&:to_s).reject(&:blank?).join(" ")
+  end
+
+  def pr_delta_display(change, unit)
+    return nil if change.nil?
+
+    unit_key = unit.to_s.downcase
+    sign = change.positive? ? "+" : "-"
+    case unit_key
+    when "sec"
+      "#{sign}#{format_duration(change.abs)}"
+    when "min"
+      "#{sign}#{format_number(change.abs)} min"
+    else
+      "#{sign}#{format_number(change.abs)} #{unit}"
+    end
+  end
+
+  def endurance_change_label(change, unit)
+    return nil if change.nil?
+
+    faster = change.negative?
+    amount = endurance_delta_display(change.abs, unit)
+    suffix = faster ? "quicker" : "slower"
+    "#{amount} #{suffix}"
+  end
+
+  def endurance_change_class(change)
+    return nil if change.nil?
+
+    change.negative? ? "pos" : "neg"
+  end
+
+  def endurance_badge_class(change)
+    return nil if change.nil?
+
+    change.negative? ? "" : "badge-muted"
+  end
+
+  def endurance_chart_values(values)
+    max = values.max || 1
+    min = values.min || 0
+    values.map { |val| max - (val - min) }
+  end
+
+  def endurance_delta_display(amount, unit)
+    unit_key = unit.to_s.downcase
+    case unit_key
+    when "sec"
+      format_duration(amount)
+    when "min"
+      format_minutes_seconds(amount)
+    else
+      format_number(amount)
+    end
+  end
+
+  private
+
+  def pr_display_value(pr)
+    unit_key = pr.unit.to_s.downcase
+    return format_duration(pr.value) if unit_key == "sec"
+
+    format_number(pr.value)
+  end
+
+  def pr_display_unit(pr)
+    unit_key = pr.unit.to_s.downcase
+    return "" if unit_key == "sec"
+
+    unit_key
+  end
+
+  def format_duration(value)
+    return "" if value.blank?
+
+    total_seconds = value.to_i
+    hours = total_seconds / 3600
+    minutes = (total_seconds % 3600) / 60
+    seconds = total_seconds % 60
+    return format("%d:%02d", minutes, seconds) if hours.zero?
+
+    format("%d:%02d:%02d", hours, minutes, seconds)
+  end
+
+  def format_minutes_seconds(minutes_value)
+    return "" if minutes_value.blank?
+
+    total_seconds = (minutes_value.to_f * 60).round
+    return "#{total_seconds} sec" if total_seconds < 60
+
+    minutes = total_seconds / 60
+    seconds = total_seconds % 60
+    "#{minutes} min #{seconds} sec"
+  end
+
+  def format_number(value)
+    return "" if value.blank?
+
+    value % 1 == 0 ? value.to_i : value.round(2)
+  end
 end

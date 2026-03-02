@@ -17,7 +17,7 @@
         <% @latest_prs.each do |pr| %>
           <li class="slot-row">
             <strong><%= pr.exercise %></strong>
-            · <%= pr.value %> <%= pr.unit %>
+            · <%= pr_value_with_unit(pr) %>
             · <%= pr.date %>
           </li>
         <% end %>

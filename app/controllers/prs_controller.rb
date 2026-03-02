@@ -27,7 +27,7 @@ class PrsController < ApplicationController
   private
 
   def pr_params
-    params.require(:pr).permit(:exercise, :value, :unit, :date)
+    params.require(:pr).permit(:exercise, :value, :unit, :date, :notes)
   end
 
   def load_suggestions
