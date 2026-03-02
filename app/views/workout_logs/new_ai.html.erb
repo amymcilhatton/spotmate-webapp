@@ -2,7 +2,7 @@
 
 <div>
   <div class="ai-panel-container">
-    <div class="ai-panel card">
+    <div class="ai-panel card" data-controller="ai-workout">
     <h3>🤖 AI assistant</h3>
     <p class="text-muted">Generate a workout plan with AI.</p>
 
@@ -33,7 +33,8 @@
 
     <%= form_with url: ai_workouts_preview_path,
                   method: :post,
-                  data: { turbo_frame: "ai_workout_preview" } do %>
+                  data: { turbo_frame: "ai_workout_preview",
+                          action: "submit->ai-workout#start turbo:submit-start->ai-workout#start" } do %>
       <div>
         <%= label_tag :goal, "Goal focus" %>
         <%= text_field_tag :goal, "strength" %>
@@ -49,10 +50,18 @@
         <%= text_field_tag :equipment, "barbell, weights" %>
       </div>
 
-      <%= submit_tag "Generate with AI", class: "btn btn-secondary w-100" %>
+      <%= button_tag type: "submit",
+                     class: "btn btn-secondary w-100 inline-flex items-center justify-center gap-2",
+                     data: { ai_workout_target: "button" } do %>
+        <span>Generate with AI</span>
+        <span class="ai-spinner ai-spinner--hidden"
+              aria-hidden="true"
+              data-ai-workout-target="spinner"></span>
+      <% end %>
     <% end %>
 
-    <turbo-frame id="ai_workout_preview">
+    <turbo-frame id="ai_workout_preview"
+                 data-action="turbo:frame-render->ai-workout#stop turbo:frame-load->ai-workout#stop">
       <div class="ai-preview-card">
         <p class="text-muted">Your AI workout suggestion will appear here.</p>
       </div>
