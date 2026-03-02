@@ -1,0 +1,19 @@
+.ai-spinner {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: ai-spin 0.8s linear infinite;
+}
+
+.ai-spinner--hidden {
+  display: none;
+}
+
+@keyframes ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
