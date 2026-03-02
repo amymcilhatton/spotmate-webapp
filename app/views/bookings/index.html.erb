@@ -46,7 +46,7 @@
     <div class="btn-row">
       <%= link_to "Add to calendar", booking_path(@this_week_booking, format: :ics), class: "btn btn-ghost" %>
       <% if @this_week_booking.buddy_session? %>
-        <%= link_to "Message buddy", chat_match_path(@this_week_booking.match), class: "btn btn-ghost" %>
+        <%= link_to "Message buddy", buddy_path(partner), class: "btn btn-ghost" %>
       <% end %>
       <%= button_to "Cancel session", booking_path(@this_week_booking), method: :delete, class: "btn btn-ghost" %>
     </div>
@@ -144,7 +144,7 @@
             <div class="btn-row">
               <%= link_to "Add to calendar", booking_path(booking, format: :ics), class: "btn btn-ghost btn-small" %>
               <% if booking.buddy_session? %>
-                <%= link_to "Message", chat_match_path(booking.match), class: "btn btn-ghost btn-small" %>
+                <%= link_to "Message", buddy_path(partner), class: "btn btn-ghost btn-small" %>
               <% end %>
               <%= button_to "Cancel", booking_path(booking), method: :delete, class: "btn btn-ghost btn-small" %>
             </div>

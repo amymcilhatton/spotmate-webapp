@@ -91,20 +91,38 @@
 
 <div class="dashboard-bottom">
   <div class="card">
-    <h3 class="card-title">📈 Recent activity</h3>
-    <% if @recent_log.present? %>
-      <p class="muted">
-        <%= @recent_log.date %>
-        <% if @recent_log.kind.present? %>
-          · <%= @recent_log.kind.humanize %> session
+    <h3 class="card-title">📈 Activity From Your Buddies</h3>
+    <% if @buddy_activity.any? %>
+      <ul class="slot-list">
+        <% @buddy_activity.each do |item| %>
+          <% actor = item[:actor] %>
+          <% log = item[:log] %>
+          <% timestamp = item[:at] %>
+          <li class="slot-row">
+            <div>
+              <% if item[:type] == :shared_workout %>
+                <strong><%= actor.name || actor.email %></strong>
+                shared a <%= log.title.presence || log.kind&.humanize || "workout" %>
+                <%= time_ago_in_words(timestamp) %> ago
+              <% else %>
+                <strong><%= actor.name || actor.email %></strong>
+                gave you kudos 🔥 on your <%= log.date&.strftime("%a") || "workout" %>
+                <%= time_ago_in_words(timestamp) %> ago
+              <% end %>
+            </div>
+            <div class="btn-row">
+              <% if item[:type] == :shared_workout %>
+                <%= link_to "View", buddy_path(actor), class: "btn btn-ghost btn-small" %>
+              <% else %>
+                <%= link_to "View", workout_logs_path, class: "btn btn-ghost btn-small" %>
+              <% end %>
+            </div>
+          </li>
         <% end %>
-      </p>
-      <% if @recent_pr.present? %>
-        <span class="badge">New PR this week!</span>
-      <% end %>
+      </ul>
     <% else %>
-      <p class="muted">You haven’t logged a workout yet.</p>
-      <%= link_to "Start tracking your progress →", new_workout_log_path, class: "btn btn-ghost" %>
+      <p class="muted">No buddy activity yet.</p>
+      <%= link_to "View buddies", buddies_path, class: "btn btn-ghost" %>
     <% end %>
   </div>
 
