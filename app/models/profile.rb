@@ -21,6 +21,7 @@ class Profile < ApplicationRecord
     hypertrophy
     weight_loss
     crossfit
+    hyrox
     olympic_lifting
     cardio
     mobility
