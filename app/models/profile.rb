@@ -36,6 +36,7 @@ class Profile < ApplicationRecord
     return nil if gym_latitude.blank? || gym_longitude.blank?
     return nil if other_profile.gym_latitude.blank? || other_profile.gym_longitude.blank?
 
+    # Great-circle distance (Haversine) for gym-to-gym matching.
     lat1 = gym_latitude.to_f
     lon1 = gym_longitude.to_f
     lat2 = other_profile.gym_latitude.to_f
@@ -56,6 +57,7 @@ class Profile < ApplicationRecord
   def nearby_profiles(max_miles:)
     return [] if gym_latitude.blank? || gym_longitude.blank?
 
+    # Filter by radius when both profiles have gym coordinates.
     Profile.where.not(id: id).select do |profile|
       distance = distance_to(profile)
       distance && distance <= max_miles

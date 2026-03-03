@@ -4,6 +4,7 @@ export default class extends Controller {
   static targets = ["button", "spinner"]
 
   start() {
+    // Disable the button and show the spinner while AI is running.
     if (this.buttonTarget.disabled) return
 
     this.buttonTarget.disabled = true
@@ -13,6 +14,7 @@ export default class extends Controller {
   }
 
   stop() {
+    // Re-enable the button and hide the spinner when AI completes.
     this.buttonTarget.disabled = false
     this.buttonTarget.classList.remove("btn-disabled")
     this.buttonTarget.removeAttribute("aria-busy")

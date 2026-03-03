@@ -39,6 +39,7 @@ class Booking < ApplicationRecord
   end
 
   def status_for(user)
+    # status is determined by the buddy status and whether the viewer is the organiser or the invited buddy
     return :accepted unless buddy_session?
     return :declined if buddy_status_declined?
 
@@ -97,6 +98,7 @@ class Booking < ApplicationRecord
   private
 
   def set_default_buddy_status
+    # Buddy sessions start pending; solo sessions are accepted.
     if buddy.present?
       self.buddy_status = "pending" if buddy_status.blank? || !buddy_status_changed?
     else

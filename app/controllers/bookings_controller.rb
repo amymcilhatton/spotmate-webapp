@@ -83,6 +83,7 @@ class BookingsController < ApplicationController
   def accept
     booking = Booking.find(params[:id])
     unless booking.buddy_id == current_user.id
+      # Only the invited buddy can accept.
       redirect_to bookings_path, alert: "You can only respond to your own invitations."
       return
     end
@@ -94,6 +95,7 @@ class BookingsController < ApplicationController
   def decline
     booking = Booking.find(params[:id])
     unless booking.buddy_id == current_user.id
+      # Only the invited buddy can decline.
       redirect_to bookings_path, alert: "You can only respond to your own invitations."
       return
     end

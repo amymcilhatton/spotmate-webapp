@@ -17,6 +17,7 @@ class MatchesController < ApplicationController
 
     radius = @profile&.match_radius_miles || 50
     if @profile&.gym_latitude.present? && @profile&.gym_longitude.present?
+      # Filter candidates by the user's matching radius.
       candidates = candidates.select do |user|
         distance = @profile.distance_to(user.profile)
         distance.nil? || distance <= radius
@@ -24,9 +25,11 @@ class MatchesController < ApplicationController
     end
 
     calculator = Matching::MatchCalculator.new(current_user)
+    # Score and rank candidates for suggestions.
     @suggestions = calculator.suggestions(candidates)
     if suggestion_matches.any?
       suggestion_by_user_id = suggestion_matches.index_by { |match| match.other_user(current_user).id }
+      # Reuse stored scores/overlaps for pending suggestions.
       @suggestions = @suggestions.map do |suggestion|
         match = suggestion_by_user_id[suggestion.user.id]
         next suggestion unless match
@@ -47,6 +50,7 @@ class MatchesController < ApplicationController
     match.score = params[:score] if params[:score].present?
 
     if match.save
+      # Auto-accept when both sides have requested.
       MatchDecision.find_or_create_by!(match: match, user: current_user, decision: :requested)
 
       if requested_by?(match, match.other_user(current_user))
@@ -142,6 +146,7 @@ class MatchesController < ApplicationController
   end
 
   def find_or_initialize_match(candidate)
+    # Keep a consistent user order so each pair has one match record
     Match.where(user_a: current_user, user_b: candidate)
          .or(Match.where(user_a: candidate, user_b: current_user))
          .first || Match.new(user_a: [current_user, candidate].min_by(&:id),
@@ -149,16 +154,19 @@ class MatchesController < ApplicationController
   end
 
   def requested_by?(match, user)
+    # Matching logic: has this user explicitly requested?
     match.match_decisions.any? { |decision| decision.decision_requested? && decision.user_id == user.id }
   end
 
   def incoming_request_for?(match)
+    # Incoming = other user requested and current user has not responded.
     match.status_pending? &&
       requested_by?(match, match.other_user(current_user)) &&
       !requested_by?(match, current_user)
   end
 
   def outgoing_request_for?(match)
+    # Outgoing = current user requested and other user has not responded.
     match.status_pending? &&
       requested_by?(match, current_user) &&
       !requested_by?(match, match.other_user(current_user))

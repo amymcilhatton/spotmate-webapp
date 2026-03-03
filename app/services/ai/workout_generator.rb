@@ -52,6 +52,7 @@ module Ai
       api_key = Rails.application.credentials.dig(:anthropic, :api_key)
       raise Error, "Missing Anthropic API key" if api_key.blank?
 
+      # External API call to Anthropic for a single workout plan.
       response = ANTHROPIC_CLIENT.messages.create(
         model: @model,
         max_tokens: 800,
@@ -77,6 +78,7 @@ module Ai
       experience = profile&.experience_band.presence || "unknown"
       recent_workouts = recent_workout_payload
 
+      # Build the prompt from goals, equipment, and recent history.
       PROMPT_TEMPLATE % {
         goal: presence_or(@goal, goals.join(", ").presence || "none provided"),
         time_available: presence_or(@time_available, "not provided"),
@@ -99,6 +101,7 @@ module Ai
     end
 
     def clean_output(text)
+      # Parse the model response into plain displayable text.
       text.to_s
           .gsub(/^\s*##?\s?/, "")
           .gsub(/\*\*(.*?)\*\*/, '\1')

@@ -27,6 +27,7 @@ class WorkoutLogsController < ApplicationController
 
     @workout_log = current_user.workout_logs.new(workout_log_params)
     if @workout_log.shared_with_buddies? && @workout_log.shared_at.blank?
+      # Set shared_at when a log is first shared.
       @workout_log.shared_at = Time.current
     end
     if @workout_log.save
